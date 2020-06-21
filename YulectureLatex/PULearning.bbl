@@ -1,0 +1,35 @@
+\begin{thebibliography}{}
+
+\bibitem[Casella and Berger, 2002]{casella2002statistical}
+Casella, G. and Berger, R.~L. (2002).
+\newblock {\em Statistical inference}, volume~2.
+\newblock Duxbury Pacific Grove, CA.
+
+\bibitem[Koltchinskii, 2001]{koltchinskii2001rademacher}
+Koltchinskii, V. (2001).
+\newblock Rademacher penalties and structural risk minimization.
+\newblock {\em IEEE Transactions on Information Theory}, 47(5):1902--1914.
+
+\bibitem[Ledoux and Talagrand, 2013]{ledoux2013probability}
+Ledoux, M. and Talagrand, M. (2013).
+\newblock {\em Probability in Banach Spaces: isoperimetry and processes}.
+\newblock Springer Science \& Business Media.
+
+\bibitem[Mohri et~al., 2012]{mohri2012foundations}
+Mohri, M., Rostamizadeh, A., and Talwalkar, A. (2012).
+\newblock Foundations of machine learning (2012).
+\newblock {\em Google Scholar}, pages 198--199.
+
+\bibitem[Niu et~al., 2016]{niu2016theoretical}
+Niu, G., du~Plessis, M.~C., Sakai, T., Ma, Y., and Sugiyama, M. (2016).
+\newblock Theoretical comparisons of positive-unlabeled learning against
+  positive-negative learning.
+\newblock In {\em Advances in neural information processing systems}, pages
+  1199--1207.
+
+\bibitem[Shalev-Shwartz and Ben-David, 2014]{shalev2014understanding}
+Shalev-Shwartz, S. and Ben-David, S. (2014).
+\newblock {\em Understanding machine learning: From theory to algorithms}.
+\newblock Cambridge university press.
+
+\end{thebibliography}

@@ -1,0 +1,306 @@
+\section{Proofs}
+\label{sec:proof}%
+
+In this appendix, we prove all the theoretical results in Section~\ref{sec:theory}.
+
+%-------------------------------------------------------------------------
+\subsection{Proof of Lemma~\ref{thm:pr-diff}}
+
+Let
+\begin{align*}
+\prp(\Xp)=\prp(\xp_1)\cdots\prp(\xp_\Np),\quad
+p(\Xu)=p(\xu_1)\cdots p(\xu_\Nu)
+\end{align*}
+be the probability density functions of  $\Xp$ and $\Xu$. Then let $F_\mathrm{p}(\Xp)$ be the cumulative distribution function of $\Xp$, $F_\mathrm{u}(\Xu)$ be that of $\Xu$, and
+\begin{align*}
+F(\Xp,\Xu)=F_\mathrm{p}(\Xp)\cdot F_\mathrm{u}(\Xu)
+\end{align*}
+be the joint cumulative distribution function of $(\Xp,\Xu)$. Given the above definitions, the measure of $\fD^-(g)$ is defined by
+\begin{align*}
+\pr(\fD^-(g))
+&= \int_{(\Xp,\Xu)\in\fD^-(g)}\dif F(\Xp,\Xu),
+\end{align*}
+where $\pr$ denotes the probability. Since $\tRpu(g)$ is identical to $\hRpu(g)$ on $\fD^+(g)$ and different from $\hRpu(g)$ on $\fD^-(g)$, we have $\pr(\fD^-(g))=\pr\{\tRpu(g)\neq\hRpu(g)\}$. That is, the measure of $\fD^-(g)$ is non-zero if and only if $\tRpu(g)$ differs from $\hRpu(g)$ with a non-zero probability.
+
+Based on the facts that $\hRpu(g)$ is unbiased and $\tRpu(g)-\hRpu(g)=0$ on $\fD^+(g)$, we have
+\begin{align*}
+\bE[\tRpu(g)]-R(g)
+&= \bE[\tRpu(g)-\hRpu(g)]\\
+&= \int_{(\Xp,\Xu)\in\fD^+(g)}\tRpu(g)-\hRpu(g)\,\dif F(\Xp,\Xu)\\
+&\quad +\int_{(\Xp,\Xu)\in\fD^-(g)}\tRpu(g)-\hRpu(g)\,\dif F(\Xp,\Xu)\\
+&= \int_{(\Xp,\Xu)\in\fD^-(g)}\tRpu(g)-\hRpu(g)\,\dif F(\Xp,\Xu).
+\end{align*}
+As a result, $\bE[\tRpu(g)]-R(g)>0$ if and only if $\int_{(\Xp,\Xu)\in\fD^-(g)}\dif F(\Xp,\Xu)>0$ due to the fact $\tRpu(g)-\hRpu(g)>0$ on $\fD^-(g)$. That is, the bias of $\tRpu(g)$ is positive if and only if the measure of $\fD^-(g)$ is non-zero.
+
+We prove \eqref{eq:pr-diff-bound} by \emph{the method of bounded differences}, for that
+\begin{align*}
+\bE[\hRu^-(g)-\pip\hRp^-(g)]=\Ru^-(g)-\pip\Rp^-(g)=\Rn^-(g)\ge\alpha.
+\end{align*}
+We have assumed that $0\le\ell(t,\pm1)\le C_\ell$, and thus the change of $\hRp^-(g)$ will be no more than $C_\ell/\Np$ if some $\xp_i\in\Xp$ is replaced, or the change of $\hRu^-(g)$ will be no more than $C_\ell/\Nu$ if some $\xu_i\in\Xu$ is replaced. Subsequently, \emph{McDiarmid's inequality} \citep{mcdiarmid89MBD} implies
+\begin{align*}
+\pr\{\Rn^-(g)-(\hRu^-(g)-\pip\hRp^-(g))\ge\alpha\}
+&\le \exp\left(-\frac{2\alpha^2}{\Np(C_\ell\pip/\Np)^2+\Nu(C_\ell/\Nu)^2}\right)\\
+&= \exp\left(-\frac{2\alpha^2/C_\ell^2}{\pip^2/\Np+1/\Nu}\right).
+\end{align*}
+Taking into account that
+\begin{align*}
+\pr(\fD^-(g)) &= \pr\{\hRu^-(g)-\pip\hRp^-(g)<0\}\\
+&\le \pr\{\hRu^-(g)-\pip\hRp^-(g)\le\Rn^-(g)-\alpha\}\\
+&= \pr\{\Rn^-(g)-(\hRu^-(g)-\pip\hRp^-(g))\ge\alpha\},
+\end{align*}
+we complete the proof. \qed
+
+%-------------------------------------------------------------------------
+\subsection{Proof of Theorem~\ref{thm:bias-consistency}}
+
+It has been proven in Lemma~\ref{thm:pr-diff} that
+\begin{align*}
+\bE[\tRpu(g)]-R(g)=\int_{(\Xp,\Xu)\in\fD^-(g)}\tRpu(g)-\hRpu(g)\,\dif F(\Xp,\Xu),
+\end{align*}
+and thus the exponential decay of the bias in \eqref{eq:bias-bound} is obtained via
+\begin{align*}
+\bE[\tRpu(g)]-R(g)
+&\le \sup\nolimits_{(\Xp,\Xu)\in\fD^-(g)}(\tRpu(g)-\hRpu(g))
+\cdot\int_{(\Xp,\Xu)\in\fD^-(g)}\dif F(\Xp,\Xu)\\
+&= \sup\nolimits_{(\Xp,\Xu)\in\fD^-(g)}(\pip\hRp^-(g)-\hRu^-(g))\cdot\pr(\fD^-(g))\\
+&\le C_\ell\pip\Delta_g.
+\end{align*}
+
+The deviation bound \eqref{eq:dev-bound} is due to
+\begin{align*}
+|\tRpu(g)-R(g)|
+&\le |\tRpu(g)-\bE[\tRpu(g)]|+|\bE[\tRpu(g)]-R(g)|\\
+&\le |\tRpu(g)-\bE[\tRpu(g)]|+C_\ell\pip\Delta_g.
+\end{align*}
+The change of $\tRpu(g)$ will be no more than $2C_\ell/\Np$ if some $\xp_i\in\Xp$ is replaced, or it will be no more than $C_\ell/\Nu$ if some $\xu_i\in\Xu$ is replaced, and McDiarmid's inequality gives us
+\begin{align*}
+\pr\{|\tRpu(g)-\bE[\tRpu(g)]|\ge\epsilon\}
+\le 2\exp\left(-\frac{2\epsilon^2}{\Np(2C_\ell\pip/\Np)^2+\Nu(C_\ell/\Nu)^2}\right),
+\end{align*}
+or equivalently, with probability at least $1-\delta$,
+\begin{align*}
+|\tRpu(g)-\bE[\tRpu(g)]|
+&\le \sqrt{\frac{\ln(2/\delta)C_\ell^2}{2}\left(\frac{4\pip^2}{\Np}+\frac{1}{\Nu}\right)}\\
+&\le C_\delta\left(\frac{2\pip}{\sqrt{\Np}}+\frac{1}{\sqrt{\Nu}}\right)\\
+&= C_\delta\cdot\chi_{\Np,\Nu}.
+\end{align*}
+On the other hand, the deviation bound \eqref{eq:dev-bound-alter} is due to
+\begin{align*}
+|\tRpu(g)-R(g)| \le |\tRpu(g)-\hRpu(g)|+|\hRpu(g)-R(g)|,
+\end{align*}
+where $|\tRpu(g)-\hRpu(g)|>0$ with probability at most $\Delta_g$, and $|\hRpu(g)-R(g)|$ shares the same concentration inequality with $|\tRpu(g)-\bE[\tRpu(g)]|$. \qed
+
+%-------------------------------------------------------------------------
+\subsection{Proof of Theorem~\ref{thm:mse}}
+
+For convenience, let $A=\pip\hRp^+(g)$ and $B=\hRu^-(g)-\pip\hRp^-(g)$, so that
+\begin{align*}
+R(g)=\bE[A+B],\quad
+\hRpu(g)=A+B,\quad
+\tRpu(g)=A+B_+,
+\end{align*}
+where $B_+=\max\{0,B\}$. Subsequently, let $R=R(g)$ for short, and then by definition,
+\begin{align*}
+\mse(\hRpu(g))
+&= \bE[(A+B-R)^2]\\
+&= \bE[(A+B)^2]-2R\cdot\bE[A+B]+R^2,\\
+\mse(\tRpu(g))
+&= \bE[(A+B_+-R(g))^2]\\
+&= \bE[(A+B_+)^2]-2R\cdot\bE[A+B_+]+R^2.
+\end{align*}
+Hence,
+\begin{align*}
+\mse(\hRpu(g))-\mse(\tRpu(g))
+&= \bE[(A+B)^2]-\bE[(A+B_+)^2]\\
+&\quad -2R\cdot(\bE[A+B]-\bE[A+B_+]).
+\end{align*}
+The first part $\bE[(A+B)^2]-\bE[(A+B_+)^2]$ can be rewritten as
+\begin{align*}
+\bE[(A+B)^2]-\bE[(A+B_+)^2]
+&= \bE[2A(B-B_+)+B^2-B_+^2]\\
+&= \int_{(\Xp,\Xu)\in\fD^+(g)}2A(B-B)+B^2-B^2\,\dif F(\Xp,\Xu)\\
+&\quad +\int_{(\Xp,\Xu)\in\fD^-(g)}2A(B-0)+B^2-0^2\,\dif F(\Xp,\Xu)\\
+&= \int_{(\Xp,\Xu)\in\fD^-(g)}2AB+B^2\,\dif F(\Xp,\Xu).
+\end{align*}
+The second part $2R\cdot(\bE[A+B]-\bE[A+B_+])$ can be rewritten as
+\begin{align*}
+2R\cdot(\bE[A+B]-\bE[A+B_+])
+&= 2R\cdot\bE[B-B_+]\\
+&= 2R\cdot\int_{(\Xp,\Xu)\in\fD^+(g)}B-B\,\dif F(\Xp,\Xu)\\
+&\quad +2R\cdot\int_{(\Xp,\Xu)\in\fD^-(g)}B-0\,\dif F(\Xp,\Xu)\\
+&= \int_{(\Xp,\Xu)\in\fD^-(g)}2RB\,\dif F(\Xp,\Xu).
+\end{align*}
+As a consequence,
+\begin{align*}
+\mse(\hRpu(g))-\mse(\tRpu(g))
+&= \int_{(\Xp,\Xu)\in\fD^-(g)}(2A+B-2R)B\,\dif F(\Xp,\Xu),
+\end{align*}
+which is exactly the left-hand side of \eqref{eq:mse-cond} since $\tRpu(g)=A$ on $\fD^-(g)$.
+
+In order to prove the rest, it suffices to show that $A-R\le B$ on $\fD^-(g)$. By the assumption that $\ell$ satisfies \eqref{eq:cond-sym-loss},
+\begin{align*}
+A-R
+&= A-\bE[A]-\bE[B]\\
+&= \pip\hRp^+(g)-\pip\Rp^+(g)-\bE[B]\\
+&= \pip\Rp^-(g)-\pip\hRp^-(g)-\bE[B].
+\end{align*}
+Thus, with probability one,
+\begin{align*}
+A-R
+&= \pip\Rp^-(g)-\pip\hRp^-(g)-\bE[B]+(\hRu^-(g)-\hRu^-(g))+(\Ru^-(g)-\Ru^-(g))\\
+&= (\hRu^-(g)-\pip\hRp^-(g))-(\Ru^-(g)-\pip\Rp^-(g))-\bE[B]+(\Ru^-(g)-\hRu^-(g))\\
+&= B-2\bE[B]+(\Ru^-(g)-\hRu^-(g))\\
+&\le B,
+\end{align*}
+where we used the assumptions that $\bE[B]\ge\alpha$ and $\Ru^-(g)-\hRu^-(g)\le2\alpha$ almost surely on $\fD^-(g)$. To sum up, we have established that
+\begin{align*}
+\int_{(\Xp,\Xu)\in\fD^-(g)}(2A+B-2R)B\,\dif F(\Xp,\Xu)
+&\ge 3\int_{(\Xp,\Xu)\in\fD^-(g)}B^2\,\dif F(\Xp,\Xu).
+\end{align*}
+Due to the fact that $B^2>0$ on $\fD^-(g)$ and the assumption that $\pr(\fD^-(g))>0$, we know Eq.~\eqref{eq:mse-cond} is valid. Finally, for any $0\le\beta\le C_\ell\pip$, it is clear that
+\begin{align*}
+\{(\Xp,\Xu)\mid B<-\beta\}
+\subseteq\{(\Xp,\Xu)\mid B<0\}
+=\fD^-(g),
+\end{align*}
+and $B<-\beta$ if and only if $\tRpu(g)-\hRpu(g)>\beta$. These two facts imply that
+\begin{align*}
+\int_{(\Xp,\Xu)\in\fD^-(g)}B^2\,\dif F(\Xp,\Xu)
+&\ge \int_{(\Xp,\Xu) \mid B<-\beta}B^2\,\dif F(\Xp,\Xu)\\
+&\ge \beta^2\int_{(\Xp,\Xu) \mid B<-\beta}\dif F(\Xp,\Xu)\\
+&= \beta^2\pr\{B<-\beta\}\\
+&= \beta^2\pr\{\tRpu(g)-\hRpu(g)>\beta\},
+\end{align*}
+which proves \eqref{eq:mse-bound} and the whole theorem. \qed
+
+%-------------------------------------------------------------------------
+\subsection{Proof of Lemma~\ref{thm:uni-dev}}
+
+\paragraph{Preliminary}%
+An alternative definition of the Rademacher complexity will be used in the proof:
+\begin{align*}
+\fR'_{n,q}(\cG) = \bE_\cX\bE_{\sigma_1,\ldots,\sigma_n}\left[ \sup\nolimits_{g\in\cG}
+\left|\frac{1}{n}\sum\nolimits_{x_i\in\cX}\sigma_ig(x_i)\right| \right].
+\end{align*}
+For the sake of comparison, the one we have used in the statements of theoretical results is
+\begin{align*}
+\fR_{n,q}(\cG) = \bE_\cX\bE_{\sigma_1,\ldots,\sigma_n}\left[ \sup\nolimits_{g\in\cG}
+\frac{1}{n}\sum\nolimits_{x_i\in\cX}\sigma_ig(x_i) \right].
+\end{align*}
+This alternative version comes from \cite{koltchinskii01tit,bartlett02jmlr} of which authors are the pioneers of error bounds based on the Rademacher complexity. Without any composition, $\fR'_{n,q}(\cG)\ge\fR_{n,q}(\cG)$ for arbitrary $\cG$ and $\fR'_{n,q}(\cG)=\fR_{n,q}(\cG)$ if $\cG$ is closed under negation. However, with a composition \begin{align*}
+\ell\circ\cG=\{\ell\circ g\mid g\in\cG\}
+\end{align*}
+where the loss $\ell$ is non-negative, the Rademacher complexity of the \emph{composite function class} would generally not satisfy $\fR'_{n,q}(\ell\circ\cG)=\fR_{n,q}(\ell\circ\cG)$ since $\ell\circ\cG$ is generally not closed under negation. Furthermore, a vital disagreement arises when considering the contraction principle or property: if $\psi:\bR\to\bR$ is a Lipschitz continuous function with a Lipschitz constant $L_\psi$ and satisfies $\psi(0)=0$, we have
+\begin{align*}
+\fR_{n,q}(\psi\circ\cG) &\le L_\psi\fR_{n,q}(\cG),\\
+\fR'_{n,q}(\psi\circ\cG) &\le 2L_\psi\fR'_{n,q}(\cG),
+\end{align*}
+according to \emph{Talagrand's contraction lemma} \citep{ledoux91PBS} and its extension \citep{mohri12FML,ssbd14UML}. Here, for $\fR_{n,q}(\psi\circ\cG)$ we can use Lemma~4.2 in \cite{mohri12FML} or Lemma~26.9 in \cite{ssbd14UML} where $\psi(0)=0$ is safely dropped, while for $\fR'_{n,q}(\psi\circ\cG)$ we have to use the original Theorem~4.12 in \cite{ledoux91PBS} where $\psi(0)=0$ is required. In fact, the name of the lemma is after that $\psi$ is a contraction if $\psi(0)=0$ and $L_\psi=1$.
+
+%-------------------------------------------------------------------------
+\paragraph{Proof}%
+Firstly, we deal with the bias of $\tRpu(g)$:
+\begin{align}
+\sup\nolimits_{g\in\cG}|\tRpu(g)-R(g)|
+&\le \sup\nolimits_{g\in\cG}|\tRpu(g)-\bE[\tRpu(g)]|
++\sup\nolimits_{g\in\cG}|\bE[\tRpu(g)]-R(g)| \notag\\
+\label{eq:uni-dev-bias}%
+&\le \sup\nolimits_{g\in\cG}|\tRpu(g)-\bE[\tRpu(g)]|
++C_\ell\pip\Delta,
+\end{align}
+where we followed the assumption that $\inf_{g\in\cG}\Rn^-(g)\ge\alpha>0$ and Theorem~\ref{thm:bias-consistency}.
+
+Secondly, we apply McDiarmid's inequality to the uniform deviation $\sup\nolimits_{g\in\cG}|\tRpu(g)-\bE[\tRpu(g)]|$ to get that with probability at least $1-\delta$,
+\begin{align}
+\label{eq:uni-dev-martingale}%
+\sup\nolimits_{g\in\cG}|\tRpu(g)-\bE[\tRpu(g)]|
+-\bE[\sup\nolimits_{g\in\cG}|\tRpu(g)-\bE[\tRpu(g)]|]
+\le C'_\delta\cdot\chi_{\Np,\Nu}.
+\end{align}
+Notice that this concentration inequality is single-sided even though the uniform deviation itself is double-sided, which is different from the non-uniform deviation in Theorem~\ref{thm:bias-consistency}.
+
+Thirdly, we make \emph{symmetrization} \citep{vapnik98SLT}. Suppose that $(\Xp',\Xu')$ is a \emph{ghost sample}, then
+\begin{align*}
+\bE[\sup\nolimits_{g\in\cG}|\tRpu(g)-\bE[\tRpu(g)]|]
+&= \bE_{(\Xp,\Xu)}[\sup\nolimits_{g\in\cG}|\tRpu(g)-\bE_{(\Xp',\Xu')}[\tRpu(g)]|]\\
+&\le \bE_{(\Xp,\Xu),(\Xp',\Xu')}[\sup\nolimits_{g\in\cG}|\tRpu(g;\Xp,\Xu)-\tRpu(g;\Xp',\Xu')|],
+\end{align*}
+where we applied \emph{Jensen's inequality} twice since the absolute value and the supremum are convex. By decomposing the difference $|\tRpu(g;\Xp,\Xu)-\tRpu(g;\Xp',\Xu')|$, we can know that
+\begin{align*}
+&|\tRpu(g;\Xp,\Xu)-\tRpu(g;\Xp',\Xu')|\\
+&\quad = |\pip\hRp^+(g;\Xp)-\pip\hRp^+(g;\Xp')\\
+&\qquad +\max\{0,\hRu^-(g;\Xu)-\pip\hRp^-(g;\Xp)\}
+-\max\{0,\hRu^-(g;\Xu')-\pip\hRp^-(g;\Xp')\}|\\
+&\quad \le \pip|\hRp^+(g;\Xp)-\hRp^+(g;\Xp')|
++\pip|\hRp^-(g;\Xp)-\hRp^-(g;\Xp')|
++|\hRu^-(g;\Xu)-\hRu^-(g;\Xu')|
+\end{align*}
+where we employed $|\max\{0,z\}-\max\{0,z'\}|\le|z-z'|$. This decomposition results in
+\begin{align}
+\bE[\sup\nolimits_{g\in\cG}|\tRpu(g)-\bE[\tRpu(g)]|]
+&\le \pip\bE_{\Xp,\Xp'}[\sup\nolimits_{g\in\cG}|\hRp^+(g;\Xp)-\hRp^+(g;\Xp')|] \notag\\
+&\quad +\pip\bE_{\Xp,\Xp'}[\sup\nolimits_{g\in\cG}|\hRp^-(g;\Xp)-\hRp^-(g;\Xp')|] \notag\\
+\label{eq:uni-dev-symmetrization}%
+&\quad +\bE_{\Xu,\Xu'}[\sup\nolimits_{g\in\cG}|\hRu^-(g;\Xu)-\hRu^-(g;\Xu')|].
+\end{align}
+
+Fourthly, we relax those expectations in \eqref{eq:uni-dev-symmetrization} to Rademacher complexities. The original $\ell$ may miss the origin, i.e., $\ell(0,y)\neq0$, with which we need to cope. Let
+\begin{align*}
+\tilde{\ell}(t,y)=\ell(t,y)-\ell(0,y)
+\end{align*}
+be a \emph{shifted loss} so that $\tilde{\ell}(0,y)=0$. Note that for all $t,t'\in\bR$ and $y=\pm1$, 
+\begin{align*}
+\ell(t,y)-\ell(t',y)=\tilde{\ell}(t,y)-\tilde{\ell}(t',y).
+\end{align*}
+Hence,
+\begin{align*}
+\hRp^+(g;\Xp)-\hRp^+(g;\Xp')
+&\textstyle = (1/\Np)\sum_{x_i\in\Xp}\ell(g(x_i),+1)
+-(1/\Np)\sum_{x'_i\in\Xp'}\ell(g(x'_i),+1)\\
+&\textstyle = (1/\Np)\sum_{i=1}^\Np(\ell(g(x_i),+1)-\ell(g(x'_i),+1))\\
+&\textstyle = (1/\Np)\sum_{i=1}^\Np
+(\tilde{\ell}(g(x_i),+1)-\tilde{\ell}(g(x'_i),+1)).
+\end{align*}
+This is already a standard form where we can attach Rademacher variables to every $\tilde{\ell}(g(x_i),+1)-\tilde{\ell}(g(x'_i),+1)$, and it is a routine work to show that
+\begin{align*}
+\bE_{\Xp,\Xp'}[\sup\nolimits_{g\in\cG}|\hRp^+(g;\Xp)-\hRp^+(g;\Xp')|]
+\le 2\fR_{\Np,\prp}(\tilde{\ell}(\cdot,+1)\circ\cG).
+\end{align*}
+The other two expectations can be handled analogously. As a result, \eqref{eq:uni-dev-symmetrization} can be reduced to
+\begin{align}
+\bE[\sup\nolimits_{g\in\cG}|\tRpu(g)-\bE[\tRpu(g)]|]
+&\le 2\pip\fR'_{\Np,\prp}(\tilde{\ell}(\cdot,+1)\circ\cG) \notag\\
+\label{eq:uni-dev-rademacher}%
+&\quad +2\pip\fR'_{\Np,\prp}(\tilde{\ell}(\cdot,-1)\circ\cG)
++2\fR'_{\Nu,p}(\tilde{\ell}(\cdot,-1)\circ\cG).
+\end{align}
+
+Finally, we transform the Rademacher complexities of composite function classes in \eqref{eq:uni-dev-rademacher} to those of the original function class. It is obvious that $\tilde{\ell}$ shares the same Lipschitz constant $L_\ell$ with $\ell$, and consequently
+\begin{align}
+\fR'_{\Np,\prp}(\tilde{\ell}(\cdot,+1)\circ\cG)
+&\le 2L_\ell\fR'_{\Np,\prp}(\cG)
+= 2L_\ell\fR_{\Np,\prp}(\cG) \notag\\
+\label{eq:uni-dev-contraction}%
+\fR'_{\Np,\prp}(\tilde{\ell}(\cdot,-1)\circ\cG)
+&\le 2L_\ell\fR'_{\Np,\prp}(\cG)
+= 2L_\ell\fR_{\Np,\prp}(\cG)\\
+\fR'_{\Nu,p}(\tilde{\ell}(\cdot,-1)\circ\cG)
+&\le 2L_\ell\fR'_{\Nu,p}(\cG)
+= 2L_\ell\fR_{\Nu,p}(\cG), \notag
+\end{align}
+where we used Talagrand's contraction lemma and the assumption that $\cG$ is closed under negation. Combining \eqref{eq:uni-dev-bias}, \eqref{eq:uni-dev-martingale}, \eqref{eq:uni-dev-rademacher} and \eqref{eq:uni-dev-contraction} finishes the proof of the uniform deviation bound \eqref{eq:uni-dev-bound}. \qed
+
+%-------------------------------------------------------------------------
+\subsection{Proof of Theorem~\ref{thm:est-err}}
+
+Based on Lemma~\ref{thm:uni-dev}, the estimation error bound \eqref{eq:est-err-bound} is proven through
+\begin{align*}
+R(\tgpu)-R(g^*)
+&= \left(\tRpu(\tgpu)-\tRpu(g^*)\right)
++\left(R(\tgpu)-\tRpu(\tgpu)\right)
++\left(\tRpu(g^*)-R(g^*)\right)\\
+&\le 0 +2\sup\nolimits_{g\in\cG}|\tRpu(g)-R(g)|\\
+&\le 16L_\ell\pip\fR_{\Np,\prp}(\cG) +8L_\ell\fR_{\Nu,p}(\cG)
++2C'_\delta\cdot\chi_{\Np,\Nu} +2C_\ell\pip\Delta,
+\end{align*}
+where $\tRpu(\tgpu)\le\tRpu(g^*)$ by the definition of $\tgpu$. \qed

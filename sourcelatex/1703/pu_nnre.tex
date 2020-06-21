@@ -1,0 +1,550 @@
+\documentclass{article}
+
+\usepackage[nonatbib,final]{nips_2017}
+\usepackage[numbers]{natbib}
+\bibliographystyle{unsrtnat}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+%\usepackage[english]{babel}
+%\usepackage{blindtext}
+
+\usepackage{xcolor}
+\definecolor{mydarkred}{rgb}{0.6,0,0}
+\definecolor{mydarkgreen}{rgb}{0,0.6,0}
+\usepackage[colorlinks,
+linkcolor=mydarkred,
+citecolor=mydarkgreen]{hyperref}
+\usepackage{url}
+
+\usepackage{graphicx}
+\graphicspath{{figure/}}
+\usepackage[skip=1ex]{caption}
+\usepackage[skip=0ex]{subcaption}
+\captionsetup[subfigure]{labelformat=simple}
+\renewcommand{\thesubfigure}{(\alph{subfigure})}
+
+\usepackage{amsmath,amsthm,amssymb}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\usepackage{algorithm,algorithmic}
+\usepackage{enumitem}
+\setlist{nosep}
+\usepackage{booktabs}
+
+\DeclareMathOperator{\sign}{\mathrm{sign}}
+\DeclareMathOperator*{\argmin}{\mathrm{arg\,min}}
+\DeclareMathOperator*{\argmax}{\mathrm{arg\,max}}
+
+%\newcommand{\T}{{\hspace{-0.25ex}\top\hspace{-0.25ex}}}
+\newcommand{\dif}{\mathrm{d}}
+\newcommand{\pr}{\mathrm{Pr}}
+\newcommand{\var}{\mathrm{Var}}
+\newcommand{\mse}{\mathrm{MSE}}
+\newcommand{\bE}{\mathbb{E}}
+\newcommand{\bR}{\mathbb{R}}
+\newcommand{\cA}{\mathcal{A}}
+\newcommand{\cG}{\mathcal{G}}
+\newcommand{\cO}{\mathcal{O}}
+\newcommand{\cX}{\mathcal{X}}
+\newcommand{\fD}{\mathfrak{D}}
+\newcommand{\fR}{\mathfrak{R}}
+
+\newcommand{\prp}{p_\mathrm{p}}
+\newcommand{\prn}{p_\mathrm{n}}
+\newcommand{\pip}{\pi_\mathrm{p}}
+\newcommand{\pin}{\pi_\mathrm{n}}
+\newcommand{\Xp}{\cX_\mathrm{p}}
+\newcommand{\Xn}{\cX_\mathrm{n}}
+\newcommand{\Xu}{\cX_\mathrm{u}}
+\newcommand{\xp}{x^\mathrm{p}}
+\newcommand{\xn}{x^\mathrm{n}}
+\newcommand{\xu}{x^\mathrm{u}}
+\newcommand{\Np}{{n_\mathrm{p}}}
+\newcommand{\Nn}{{n_\mathrm{n}}}
+\newcommand{\Nu}{{n_\mathrm{u}}}
+
+\newcommand{\Rp}{R_\mathrm{p}}
+\newcommand{\Rn}{R_\mathrm{n}}
+\newcommand{\Ru}{R_\mathrm{u}}
+\newcommand{\hRp}{\widehat{R}_\mathrm{p}}
+\newcommand{\hRn}{\widehat{R}_\mathrm{n}}
+\newcommand{\hRu}{\widehat{R}_\mathrm{u}}
+\newcommand{\hRpn}{\widehat{R}_\mathrm{pn}}
+\newcommand{\hRpu}{\widehat{R}_\mathrm{pu}}
+\newcommand{\tRpu}{\widetilde{R}_\mathrm{pu}}
+\newcommand{\hgpn}{\widehat{g}_\mathrm{pn}}
+\newcommand{\hgpu}{\widehat{g}_\mathrm{pu}}
+\newcommand{\tgpu}{\widetilde{g}_\mathrm{pu}}
+
+\newcommand{\ellsig}{\ell_\mathrm{sig}}
+
+\title{Positive-Unlabeled Learning with\\Non-Negative Risk Estimator}
+
+\author{Ryuichi Kiryo$^{1,2}$\quad
+  Gang Niu$^{1,2}$\quad
+  Marthinus C.~du Plessis\quad
+  Masashi Sugiyama$^{2,1}$\\
+  ${}^1$The University of Tokyo, 7-3-1 Hongo, Tokyo 113-0033, Japan\\
+  ${}^2$RIKEN, 1-4-1 Nihonbashi, Tokyo 103-0027, Japan\\
+  \texttt{\{ kiryo@ms., gang@ms., sugi@ \}k.u-tokyo.ac.jp}
+}
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+From only \emph{positive}~(P) and \emph{unlabeled}~(U) data, a binary classifier could be trained with PU learning, in which the state of the art is \emph{unbiased PU learning}. However, if its model is very flexible, empirical risks on training data will go negative, and we will suffer from serious overfitting. In this paper, we propose a \emph{non-negative risk estimator} for PU learning: when getting minimized, it is more robust against overfitting, and thus we are able to use very flexible models (such as deep neural networks) given limited P data. Moreover, we analyze the \emph{bias}, \emph{consistency}, and \emph{mean-squared-error reduction} of the proposed risk estimator, and bound the \emph{estimation error} of the resulting \emph{empirical risk minimizer}. Experiments demonstrate that our risk estimator fixes the overfitting problem of its unbiased counterparts.
+\end{abstract}
+
+%-------------------------------------------------------------------------
+\section{Introduction}
+
+\emph{Positive-unlabeled}~(PU) \emph{learning} can be dated back to \cite{denis98alt,comite99alt,letouzey00alt} and has been well studied since then. It mainly focuses on binary classification applied to retrieval and novelty or outlier detection tasks \citep{elkan08kdd,ward09biometrics,scott09aistats,blanchard10jmlr}, while it also has applications in matrix completion \citep{hsieh15icml} and sequential data \citep{li09sdm,nguyen11ijcai}.
+
+Existing PU methods can be divided into two categories based on how U data is handled. The first category (e.g., \citep{liu02icml,li03ijcai}) identifies possible \emph{negative}~(N) data in U data, and then performs ordinary supervised (PN) learning; the second (e.g., \citep{lee03icml,liu03icdm}) regards U data as N data with smaller weights. The former heavily relies on the heuristics for identifying N data; the latter heavily relies on good choices of the weights of U data, which is computationally expensive to tune.
+
+In order to avoid tuning the weights, \emph{unbiased PU learning} comes into play as a subcategory of the second category. The milestone is \cite{elkan08kdd}, which regards a U data as weighted P and N data simultaneously. It might lead to \emph{unbiased risk estimators}, if we unrealistically assume that the class-posterior probability is one for all P data.%
+\footnote{It implies the P and N class-conditional densities have disjoint support sets, and then any P and N data (as the test data) can be perfectly separated by a fixed classifier that is sufficiently flexible.}
+A breakthrough in this direction is \cite{christo14nips} for proposing the first unbiased risk estimator, and a more general estimator was suggested in \cite{christo15icml} as a common foundation. The former is unbiased but non-convex for loss functions satisfying some symmetric condition; the latter is always unbiased, and it is further convex for loss functions meeting some linear-odd condition \citep{natarajan13nips,patrini16icml}. PU learning based on these unbiased risk estimators is the current state of the art.
+
+However, the unbiased risk estimators will give negative empirical risks, if the model being trained is very flexible. For the general estimator in \cite{christo15icml}, there exist three partial risks in the total risk (see Eq.~\eqref{eq:risk-pu-hat} defined later), especially it has a negative risk regarding P data as N data to cancel the bias caused by regarding U data as N data. The worst case is that the model can realize any measurable function and the loss function is not upper bounded, so that the empirical risk is not lower bounded. This needs to be fixed since the original risk, which is the target to be estimated, is non-negative.
+
+To this end, we propose a novel \emph{non-negative risk estimator} that follows and improves on the state-of-the-art unbiased risk estimators mentioned above. This estimator can be used for two purposes: first, given some validation data (which are also PU data), we can use our estimator to evaluate the risk---for this case it is \emph{biased} yet \emph{optimal}, and for some symmetric losses, the \emph{mean-squared-error reduction} is guaranteed; second, given some training data, we can use our estimator to train binary classifiers---for this case its risk minimizer possesses an \emph{estimation error bound} of the same order as the risk minimizers corresponding to its unbiased counterparts \citep{christo14nips,christo15icml,niu16nips}.
+
+In addition, we propose a \emph{large-scale} PU learning algorithm for minimizing the unbiased and non-negative risk estimators. This algorithm accepts any \emph{surrogate loss} and is based on \emph{stochastic optimization}, e.g., \cite{kingma15iclr}. Note that \cite{sansone16arxiv} is the only existing large-scale PU algorithm, but it only accepts a single surrogate loss from \cite{christo15icml} and is based on \emph{sequential minimal optimization} \citep{platt99SMO}.
+
+The rest of this paper is organized as follows. In Section~\ref{sec:upu} we review unbiased PU learning,  and in Section~\ref{sec:nnpu} we propose non-negative PU learning. Theoretical analyses are carried out in Section~\ref{sec:theory}, and experimental results are discussed in Section~\ref{sec:experiment}. Conclusions are given in Section~\ref{sec:concl}.
+
+%-------------------------------------------------------------------------
+\section{Unbiased PU learning}
+\label{sec:upu}%
+
+In this section, we review unbiased PU learning \citep{christo14nips,christo15icml}.
+
+%-------------------------------------------------------------------------
+\paragraph{Problem settings}
+Let $X\in\bR^d$ and $Y\in\{\pm1\}$ ($d\in\mathbb{N}$) be the input and output random variables. Let $p(x,y)$ be the \emph{underlying joint density} of $(X,Y)$, $\prp(x)=p(x\mid Y=+1)$ and $\prn(x)=p(x\mid Y=-1)$ be the \emph{P and N marginals} (a.k.a.\ the P and N class-conditional densities), $p(x)$ be the \emph{U marginal}, $\pip=p(Y=+1)$ be the \emph{class-prior probability}, and $\pin=p(Y=-1)=1-\pip$. $\pip$ is assumed known throughout the paper; it can be estimated from P and U data \citep{menon15icml,ramaswamy16icml,jain16nips,christo17mlj}.
+
+Consider the \emph{two-sample problem setting} of PU learning \citep{ward09biometrics}: two sets of data are sampled independently from $\prp(x)$ and $p(x)$ as $\Xp=\{\xp_i\}_{i=1}^\Np\sim\prp(x)$ and $\Xu=\{\xu_i\}_{i=1}^\Nu\sim p(x)$, and a classifier needs to be trained from $\Xp$ and $\Xu$.%
+\footnote{$\Xp$ is a set of independent data and so is $\Xu$, but $\Xp\cup\Xu$ does not need to be such a set.}
+If it is PN learning as usual, $\Xn=\{\xn_i\}_{i=1}^\Nn\sim\prn(x)$ rather than $\Xu$ would be available and a classifier could be trained from $\Xp$ and $\Xn$.
+
+%-------------------------------------------------------------------------
+\paragraph{Risk estimators}
+Unbiased PU learning relies on unbiased risk estimators. Let $g:\bR^d\to\bR$ be an arbitrary \emph{decision function}, and $\ell:\bR\times\{\pm1\}\to\bR$ be the \emph{loss function}, such that the value $\ell(t,y)$ means the loss incurred by predicting an output $t$ when the ground truth is $y$. Denote by $\Rp^+(g)=\bE_\mathrm{p}[\ell(g(X),+1)]$ and $\Rn^-(g)=\bE_\mathrm{n}[\ell(g(X),-1)]$, where $\bE_\mathrm{p}[\cdot]=\bE_{X\sim\prp}[\cdot]$ and $\bE_\mathrm{n}[\cdot]=\bE_{X\sim\prn}[\cdot]$. Then, the \emph{risk} of $g$ is $R(g)=\bE_{(X,Y)\sim p(x,y)}[\ell(g(X),Y)]=\pip\Rp^+(g)+\pin\Rn^-(g)$. In PN learning, thanks to the availability of $\Xp$ and $\Xn$, $R(g)$ can be approximated directly by
+\begin{align}
+\label{eq:risk-pn-hat}%
+\hRpn(g)=\pip\hRp^+(g)+\pin\hRn^-(g),
+\end{align}
+where $\hRp^+(g)=(1/\Np)\sum_{i=1}^\Np\ell(g(\xp_i),+1)$ and $\hRn^-(g)=(1/\Nn)\sum_{i=1}^\Nn\ell(g(\xn_i),-1)$. In PU learning, $\Xn$ is unavailable, but $\Rn^-(g)$ can be approximated indirectly, as shown in \citep{christo14nips,christo15icml}. Denote by $\Rp^-(g)=\bE_\mathrm{p}[\ell(g(X),-1)]$ and $\Ru^-(g)=\bE_{X\sim p(x)}[\ell(g(X),-1)]$. As $\pin\prn(x)=p(x)-\pip\prp(x)$, we can obtain that $\pin\Rn^-(g)=\Ru^-(g)-\pip\Rp^-(g)$, and $R(g)$ can be approximated indirectly by
+\begin{align}
+\label{eq:risk-pu-hat}%
+\hRpu(g)=\pip\hRp^+(g)-\pip\hRp^-(g)+\hRu^-(g),
+\end{align}
+where $\hRp^-(g)=(1/\Np)\sum_{i=1}^\Np\ell(g(\xp_i),-1)$ and $\hRu^-(g)=(1/\Nu)\sum_{i=1}^\Nu\ell(g(\xu_i),-1)$.
+
+The \emph{empirical risk estimators} in Eqs.~\eqref{eq:risk-pn-hat} and \eqref{eq:risk-pu-hat} are \emph{unbiased} and \emph{consistent} w.r.t.\ all popular loss functions.%
+\footnote{The consistency here means for fixed $g$, $\hRpn(g)\to R(g)$ and $\hRpu(g)\to R(g)$ as $\Np,\Nn,\Nu\to\infty$.}
+When they are used for evaluating the risk (e.g., in cross-validation), $\ell$ is by default the \emph{zero-one loss}, namely $\ell_{01}(t,y)=(1-\sign(ty))/2$; when used for training, $\ell_{01}$ is replaced with a \emph{surrogate loss} \citep{bartlett06jasa}. In particular, \cite{christo14nips} showed that if $\ell$ satisfies a \emph{symmetric condition}:
+\begin{align}
+\label{eq:cond-sym-loss}%
+\ell(t,+1)+\ell(t,-1)=1,
+\end{align}
+we will have
+\begin{align}
+\label{eq:risk-pu-hat-noncvx}%
+\hRpu(g)=2\pip\hRp^+(g)+\hRu^-(g)-\pip,
+\end{align}
+which can be minimized by separating $\Xp$ and $\Xu$ with ordinary cost-sensitive learning. An issue is $\hRpu(g)$ in \eqref{eq:risk-pu-hat-noncvx} must be non-convex in $g$, since no $\ell(t,y)$ in \eqref{eq:cond-sym-loss} can be convex in $t$. \cite{christo15icml} showed that $\hRpu(g)$ in \eqref{eq:risk-pu-hat} is convex in $g$, if $\ell(t,y)$ is convex in $t$ and meets a \emph{linear-odd condition} \citep{natarajan13nips,patrini16icml}:
+\begin{align}
+\label{eq:cond-lin-loss}%
+\ell(t,+1)-\ell(t,-1)=-t.
+\end{align}
+Let $g$ be parameterized by $\theta$, then \eqref{eq:cond-lin-loss} leads to a convex optimization problem so long as $g$ is linear in $\theta$, for which the globally optimal solution can be obtained. Eq.~\eqref{eq:cond-lin-loss} is not only sufficient but also necessary for the convexity, if $\ell$ is unary, i.e., $\ell(t,-1)=\ell(-t,+1)$.
+
+%-------------------------------------------------------------------------
+\paragraph{Justification}
+Thanks to the unbiasedness, we can study \emph{estimation error bounds}~(EEB). Let $\cG$ be the \emph{function class}, and $\hgpn$ and $\hgpu$ be the \emph{empirical risk minimizers} of $\hRpn(g)$ and $\hRpu(g)$. \cite{niu16nips} proved EEB of $\hgpu$ is tighter than EEB of $\hgpn$ when $\pip/\sqrt{\Np}+1/\sqrt{\Nu}<\pin/\sqrt{\Nn}$, if
+(a) $\ell$ satisfies \eqref{eq:cond-sym-loss} and is \emph{Lipschitz continuous};
+(b) the \emph{Rademacher complexity} of $\cG$ decays in $\cO(1/\sqrt{n})$ for data of size $n$ drawn from $p(x)$, $\prp(x)$ or $\prn(x)$.%
+\footnote{Let $\sigma_1,\ldots,\sigma_n$ be $n$ Rademacher variables, the Rademacher complexity of $\cG$ for $\cX$ of size $n$ drawn from $q(x)$ is defined by $\fR_{n,q}(\cG) = \bE_\cX\bE_{\sigma_1,\ldots,\sigma_n} [\sup_{g\in\cG}\frac{1}{n}\sum_{x_i\in\cX}\sigma_ig(x_i)]$ \citep{mohri12FML}. For any fixed $\cG$ and $q$, $\fR_{n,q}(\cG)$ still depends on $n$ and should decrease with $n$.}
+In other words, under mild conditions, PU learning is likely to outperform PN learning when $\pip/\sqrt{\Np}+1/\sqrt{\Nu}<\pin/\sqrt{\Nn}$. This phenomenon has been observed in experiments \citep{niu16nips} and is illustrated in Figure~\ref{fig:illu-surr-lin}.
+
+%-------------------------------------------------------------------------
+\section{Non-negative PU learning}
+\label{sec:nnpu}%
+
+In this section, we propose the non-negative risk estimator and the large-scale PU algorithm.
+
+\subsection{Motivation}
+
+Let us look inside the aforementioned justification of unbiased PU (uPU) learning. Intuitively, the advantage comes from the transformation $\pin\Rn^-(g)=\Ru^-(g)-\pip\Rp^-(g)$. When we approximate $\pin\Rn^-(g)$ from N data $\{\xn_i\}_{i=1}^\Nn$, the convergence rate is $\cO_p(\pin/\sqrt{\Nn})$, where $\cO_p$ denotes the order in probability; when we approximate $\Ru^-(g)-\pip\Rp^-(g)$ from P data $\{\xp_i\}_{i=1}^\Np$ and U data $\{\xu_i\}_{i=1}^\Nu$, the convergence rate becomes $\cO_p(\pip/\sqrt{\Np}+1/\sqrt{\Nu})$. As a result, we might benefit from a tighter \emph{uniform deviation bound} when $\pip/\sqrt{\Np}+1/\sqrt{\Nu}<\pin/\sqrt{\Nn}$.
+
+\begin{figure*}[t]
+  {\centering
+    \subcaptionbox{Plain linear model\label{fig:illu-surr-lin}}
+    {\includegraphics[width=0.5\textwidth]{illustration_surrogate_linear}}%
+    \subcaptionbox{Multilayer perceptron (MLP)\label{fig:illu-surr-mlp}}
+    {\includegraphics[width=0.5\textwidth]{illustration_surrogate_mlp}}}
+  \vskip1ex%
+  {\footnotesize%
+    The dataset is MNIST; even/odd digits are regarded as the P/N class, and $\pip\approx1/2$; $\Np=100$ and $\Nn=50$ for PN learning; $\Np=100$ and $\Nu=59,900$ for unbiased PU (uPU) and non-negative PU (nnPU) learning.
+    The model is a plain linear model (784-1) in \subref{fig:illu-surr-lin} and an MLP (784-100-1) with ReLU in \subref{fig:illu-surr-mlp}; it was trained by Algorithm~\ref{alg:large-scale-pu}, where the loss $\ell$ is $\ellsig$, the optimization algorithm $\cA$ is \citep{kingma15iclr}, with $\beta=1/2$ for uPU, and $\beta=0$ and $\gamma=1$ for nnPU.
+    Solid curves are $\hRpn(g)$ on test data where $g\in\{\hgpn,\hgpu,\tgpu\}$, and dashed curves are $\hRpn(\hgpn)$, $\hRpu(\hgpu)$ and $\tRpu(\tgpu)$ on training data.
+    Note that nnPU is identical to uPU in \subref{fig:illu-surr-lin}.}
+  \caption{Illustrative experimental results.}
+  \label{fig:illustration}
+  \vskip-2ex%
+\end{figure*}
+
+However, the critical assumption on the Rademacher complexity is indispensable, otherwise it will be difficult for EEB of $\hgpu$ to be tighter than EEB of $\hgpn$. If $\cG=\{g\mid\|g\|_\infty\le C_g\}$ where $C_g>0$ is a constant, i.e., it has all measurable functions with some bounded norm, then $\fR_{n,q}(\cG)=\cO(1)$ for any $n$ and $q(x)$ and all bounds become trivial; moreover if $\ell$ is not bounded from above, $\hRpu(g)$ becomes not bounded from below, i.e., it may diverge to $-\infty$. Thus, in order to obtain high-quality $\hgpu$, $\cG$ cannot be too complex, or equivalently the model of $g$ cannot be too flexible.
+
+This argument is supported by an experiment as illustrated in Figure~\ref{fig:illu-surr-mlp}. A \emph{multilayer perceptron} was trained for separating the even and odd digits of MNIST hand-written digits \citep{lecun98mnist}. This model is so flexible that the number of parameters is 500 times more than the total number of P and N data. From Figure~\ref{fig:illu-surr-mlp} we can see:
+\begin{enumerate}[label=(\Alph*)]
+  \vspace{-1ex}%
+  \item on training data, the risks of uPU and PN both decrease, and uPU is faster than PN;
+  \item on test data, the risk of PN decreases, whereas the risk of uPU does not; the risk of uPU is lower at the beginning but higher at the end than that of PN.
+  \vspace{-1ex}%
+\end{enumerate}
+To sum up, the overfitting problem of uPU is serious, which evidences that in order to obtain high-quality $\hgpu$, the model of $g$ cannot be too flexible.
+
+%-------------------------------------------------------------------------
+\subsection{Non-negative risk estimator}
+
+Nevertheless, we have no choice sometimes: we are interested in using flexible models, while labeling more data is out of our control. Can we alleviate the overfitting problem with neither changing the model nor labeling more data?
+
+The answer is affirmative. Note that $\hRpu(\hgpu)$ keeps decreasing and goes negative. This should be fixed since $R(g)\ge0$ for any $g$. Specifically, it holds that $\Ru^-(g)-\pip\Rp^-(g)=\pin\Rn^-(g)\ge0$, but $\hRu^-(g)-\pip\hRp^-(g)\ge0$ is not always true, which is a potential reason for uPU to overfit. Based on this key observation, we propose a \emph{non-negative risk estimator} for PU learning:
+\begin{align}
+\label{eq:risk-pu-tilde}%
+\tRpu(g)=\pip\hRp^+(g)+\max\left\{0,\hRu^-(g)-\pip\hRp^-(g)\right\}.
+\end{align}
+Let $\tgpu=\argmin\nolimits_{g\in\cG}\tRpu(g)$ be the empirical risk minimizer of $\tRpu(g)$. We refer to the process of obtaining $\tgpu$ as \emph{non-negative PU}~(nnPU) \emph{learning}. The implementation of nnPU  will be given in Section~\ref{sec:implementation}, and theoretical analyses of $\tRpu(g)$ and $\tgpu$ will be given in Section~\ref{sec:theory}.
+
+Again, from Figure~\ref{fig:illu-surr-mlp} we can see:
+\begin{enumerate}[label=(\Alph*)]
+  \vspace{-1ex}%
+  \item on training data, the risk of nnPU first decreases and then becomes more and more flat, so that the risk of nnPU is closer to the risk of PN and farther from that of uPU; in short, the risk of nnPU does not go down with uPU after a certain epoch;
+  \item on test data, the tendency is similar, but the risk of nnPU does not go up with uPU;
+  \item at the end, nnPU achieves the lowest risk on test data.
+  \vspace{-1ex}%
+\end{enumerate}
+In summary, nnPU works by explicitly constraining the training risk of uPU to be non-negative.
+
+%-------------------------------------------------------------------------
+\subsection{Implementation}%
+\label{sec:implementation}%
+
+A list of popular loss functions and their properties is shown in Table~\ref{tab:loss}. Let $g$ be parameterized by $\theta$. If $g$ is linear in $\theta$, the losses satisfying \eqref{eq:cond-lin-loss} result in convex optimizations. However, if $g$ needs to be flexible, it will be highly nonlinear in $\theta$; then the losses satisfying \eqref{eq:cond-lin-loss} are not advantageous over others, since the optimizations are anyway non-convex. In \cite{christo14nips}, the \emph{ramp loss} was used and $\hRpu(g)$ was minimized by \emph{the concave-convex procedure} \citep{yuille01nips}. This solver is fairly sophisticated, and if we replace $\hRpu(g)$ with $\tRpu(g)$, it will be more difficult to implement. To this end, we propose to use the \emph{sigmoid loss} $\ellsig(t,y)=1/(1+\exp(ty))$: its gradient is everywhere non-zero and $\tRpu(g)$ can be minimized by off-the-shelf gradient methods.
+
+\begin{table*}[t]
+  \caption{Loss functions for PU learning and their properties.}
+  \label{tab:loss}
+  {\centering\small
+  \begin{tabular*}{\textwidth}{l|l|ccccc}
+    \toprule
+    Name & Definition & \eqref{eq:cond-sym-loss} & \eqref{eq:cond-lin-loss}
+    & Bounded & Lipschitz & $\ell'(z)\neq0$ \\
+    \midrule
+    Zero-one loss & $(1-\sign(z))/2$
+    & $\checkmark$ & $\times$ & $\checkmark$ & $\times$ & $z=0$ \\
+    Ramp loss & $\max\{0,\min\{1,(1-z)/2\}\}$
+    & $\checkmark$ & $\times$ & $\checkmark$ & $\checkmark$ & $z\in[-1,+1]$ \\
+    Squared loss & $(z-1)^2/4$
+    & $\times$ & $\checkmark$ & $\times$ & $\times$ & $z\in\bR$ \\
+    Logistic loss & $\ln(1+\exp(-z))$
+    & $\times$ & $\checkmark$ & $\times$ & $\checkmark$ & $z\in\bR$ \\
+    Hinge loss & $\max\{0,1-z\}$
+    & $\times$ & $\times$ & $\times$ & $\checkmark$ & $z\in(-\infty,+1]$\\
+    Double hinge loss & $\max\{0,(1-z)/2,-z\}$
+    & $\times$ & $\checkmark$ & $\times$ & $\checkmark$ & $z\in(-\infty,+1]$ \\
+    Sigmoid loss & $1/(1+\exp(z))$
+    & $\checkmark$ & $\times$ & $\checkmark$ & $\checkmark$ & $z\in\bR$ \\
+    \bottomrule
+  \end{tabular*}}
+  \vskip1ex%
+  {\footnotesize%
+    All loss functions are unary, such that $\ell(t,y)=\ell(z)$ with $z=ty$.
+    The ramp loss comes from \cite{christo14nips}; the double hinge loss is from \cite{christo15icml}, in which the squared, logistic and hinge losses were discussed as well.
+    The ramp and squared losses are scaled to satisfy \eqref{eq:cond-sym-loss} or \eqref{eq:cond-lin-loss}.
+    The sigmoid loss is a horizontally mirrored \emph{logistic function}; the logistic loss is the negative logarithm of the logistic function.}
+\end{table*}
+
+In front of big data, we should scale PU learning up by stochastic optimization. Minimizing $\hRpu(g)$ is \emph{embarrassingly parallel} while minimizing $\tRpu(g)$ is not, since $\hRpu(g)$ is \emph{point-wise} but $\tRpu(g)$ is not due to the max operator. That being said, $\max\{0,\hRu^-(g;\Xu)-\pip\hRp^-(g;\Xp)\}$ is no greater than $(1/N)\sum_{i=1}^N\max\{0,\hRu^-(g;\Xu^i)-\pip\hRp^-(g;\Xp^i)\}$,
+%\begin{align*}
+%\max\{0,\hRu^-(g;\Xu)-\pip\hRp^-(g;\Xp)\}
+%&\textstyle =\max\{0,(1/N)\sum_{i=1}^N(\hRu^-(g;\Xu^i)-\pip\hRp^-(g;\Xp^i))\}\\
+%&\textstyle \le(1/N)\sum_{i=1}^N\max\{0,\hRu^-(g;\Xu^i)-\pip\hRp^-(g;\Xp^i)\},
+%\end{align*}
+where $(\Xp^i,\Xu^i)$ is the $i$-th mini-batch, and hence the corresponding upper bound of $\tRpu(g)$ can easily be minimized in parallel.
+
+\begin{algorithm}[t]
+  \caption{Large-scale PU learning based on stochastic optimization}
+  \label{alg:large-scale-pu}
+  \begin{algorithmic}
+    \STATE \textbf{Input:} training data $(\Xp,\Xu)$;
+    \STATE \qquad\quad hyperparameters $0\le\beta\le\pip\sup_t\max_y\ell(t,y)$ and $0\le\gamma\le1$
+    \STATE \textbf{Output:} model parameter $\theta$ for $\hgpu(x;\theta)$ or $\tgpu(x;\theta)$
+  \end{algorithmic}
+  \begin{algorithmic}[1]
+    \STATE Let $\cA$ be an external SGD-like stochastic optimization algorithm such as \cite{kingma15iclr} or \cite{duchi11jmlr}
+    \STATE \textbf{while} no stopping criterion has been met:
+    \STATE \quad Shuffle $(\Xp,\Xu)$ into $N$ mini-batches,
+      and denote by $(\Xp^i,\Xu^i)$ the $i$-th mini-batch
+    \STATE \quad \textbf{for} $i=1$ \textbf{to} $N$:
+    \STATE \qquad \textbf{if} $\hRu^-(g;\Xu^i)-\pip\hRp^-(g;\Xp^i)\ge-\beta$:
+    \STATE \qquad\quad Set gradient $\nabla_\theta\hRpu(g;\Xp^i,\Xu^i)$
+    \STATE \qquad\quad Update $\theta$ by $\cA$ with its current step size $\eta$
+    \STATE \qquad \textbf{else}:
+    \STATE \qquad\quad Set gradient $\nabla_\theta(\pip\hRp^-(g;\Xp^i)-\hRu^-(g;\Xu^i))$
+    \STATE \qquad\quad Update $\theta$ by $\cA$ with a discounted step size $\gamma\eta$
+  \end{algorithmic}
+\end{algorithm}
+
+The large-scale PU algorithm is described in Algorithm~\ref{alg:large-scale-pu}. Let $r_i=\hRu^-(g;\Xu^i)-\pip\hRp^-(g;\Xp^i)$. In practice, we may tolerate $r_i\ge-\beta$ where $0\le\beta\le\pip\sup_t\max_y\ell(t,y)$, as $r_i$ comes from a single mini-batch. The degree of tolerance is controlled by $\beta$: there is zero tolerance if $\beta=0$, and we are minimizing $\hRpu(g)$ if $\beta=\pip\sup_t\max_y\ell(t,y)$. Otherwise if $r_i<-\beta$, we go along $-\nabla_\theta r_i$ with a step size discounted by $\gamma$ where $0\le\gamma\le1$, to make this mini-batch less overfitted. Algorithm~\ref{alg:large-scale-pu} is insensitive to the choice of $\gamma$, if the optimization algorithm $\cA$ is adaptive such as \cite{kingma15iclr} or \cite{duchi11jmlr}.
+
+%-------------------------------------------------------------------------
+\section{Theoretical analyses}
+\label{sec:theory}%
+
+In this section, we analyze the risk estimator \eqref{eq:risk-pu-tilde} and its minimizer (all proofs are in Appendix~\ref{sec:proof}).
+
+%-------------------------------------------------------------------------
+\subsection{Bias and consistency}%
+
+Fix $g$, $\tRpu(g)\ge\hRpu(g)$ for any $(\Xp,\Xu)$ but $\hRpu(g)$ is unbiased, which implies $\tRpu(g)$ is biased in general. A fundamental question is then whether $\tRpu(g)$ is consistent. From now on, we prove this consistency. To begin with, partition all possible $(\Xp,\Xu)$ into $\fD^+(g) = \{(\Xp,\Xu) \mid \hRu^-(g)-\pip\hRp^-(g)\ge0\}$ and $\fD^-(g) = \{(\Xp,\Xu) \mid \hRu^-(g)-\pip\hRp^-(g)<0\}$. Assume there are $C_g>0$ and $C_\ell>0$ such that $\sup_{g\in\cG}\|g\|_\infty\le C_g$ and $\sup_{|t|\le C_g}\max_y\ell(t,y)\le C_\ell$.
+
+\begin{lemma}
+  \label{thm:pr-diff}%
+  The following three conditions are equivalent:
+  (A) the probability measure of $\fD^-(g)$ is non-zero;
+  (B) $\tRpu(g)$ differs from $\hRpu(g)$ with a non-zero probability over repeated sampling of $(\Xp,\Xu)$;
+  (C) the bias of $\tRpu(g)$ is positive.
+  In addition, by assuming that there is $\alpha>0$ such that $\Rn^-(g)\ge\alpha$, the probability measure of $\fD^-(g)$ can be bounded by
+  \begin{align}
+  \label{eq:pr-diff-bound}%
+  \pr(\fD^-(g)) \le \exp( -2(\alpha/C_\ell)^2/(\pip^2/\Np+1/\Nu) ).
+  \end{align}
+\end{lemma}
+
+Based on Lemma~\ref{thm:pr-diff}, we can show the exponential decay of the bias and also the consistency. For convenience, denote by $\chi_{\Np,\Nu}=2\pip/\sqrt{\Np}+1/\sqrt{\Nu}$.
+
+\begin{theorem}[Bias and consistency]
+  \label{thm:bias-consistency}%
+  Assume that $\Rn^-(g)\ge\alpha>0$ and denote by $\Delta_g$ the right-hand side of Eq.~\eqref{eq:pr-diff-bound}. As $\Np,\Nu\to\infty$, the bias of $\tRpu(g)$ decays exponentially:
+  \begin{align}
+  \label{eq:bias-bound}%
+  0 \le \bE_{\Xp,\Xu}[\tRpu(g)]-R(g) \le C_\ell\pip\Delta_g.
+  \end{align}
+  Moreover, for any $\delta>0$, let $C_\delta=C_\ell\sqrt{\ln(2/\delta)/2}$, then we have with probability at least $1-\delta$,
+  \begin{align}
+  \label{eq:dev-bound}%
+  |\tRpu(g)-R(g)| \le C_\delta\cdot\chi_{\Np,\Nu}+C_\ell\pip\Delta_g,
+  \end{align}
+  and with probability at least $1-\delta-\Delta_g$,
+  \begin{align}
+  \label{eq:dev-bound-alter}%
+  |\tRpu(g)-R(g)| \le C_\delta\cdot\chi_{\Np,\Nu}.
+  \end{align}
+\end{theorem}
+
+Either \eqref{eq:dev-bound} or \eqref{eq:dev-bound-alter} in Theorem~\ref{thm:bias-consistency} indicates for fixed $g$, $\tRpu(g)\to R(g)$ in $\cO_p(\pip/\sqrt{\Np}+1/\sqrt{\Nu})$.
+%\eqref{eq:dev-bound} relies on \eqref{eq:bias-bound} and the deviation from $\tRpu(g)$ to its expectation, and \eqref{eq:dev-bound-alter} relies on \eqref{eq:pr-diff-bound} and the deviation from $\hRpu(g)$ to its expectation.
+This convergence rate is optimal according to the \emph{central limit theorem} \citep{chung68CPT}, which means the proposed estimator is a biased yet optimal estimator to the risk.
+
+%-------------------------------------------------------------------------
+\subsection{Mean squared error}%
+
+After introducing the bias, $\tRpu(g)$ tends to overestimate $R(g)$. It is not a \emph{shrinkage estimator} \citep{stein56bsmsp,james61bsmsp} so that its \emph{mean squared error}~(MSE) is not necessarily smaller than that of $\hRpu(g)$. However, we can still characterize this reduction in MSE.
+
+\begin{theorem}[MSE reduction]
+  \label{thm:mse}%
+  It holds that $\mse(\tRpu(g))<\mse(\hRpu(g))$,%
+  \footnote{Here, $\mse(\cdot)$ is over repeated sampling of $(\Xp,\Xu)$.}
+  if and only if
+  \begin{align}
+  \label{eq:mse-cond}%
+  \int_{(\Xp,\Xu)\in\fD^-(g)}(\hRpu(g)+\tRpu(g)-2R(g))
+  (\hRu^-(g)-\pip\hRp^-(g))\,\dif F(\Xp,\Xu) > 0,
+  \end{align}
+  where $\dif F(\Xp,\Xu)=\prod_{i=1}^\Np\prp(\xp_i)\dif\xp_i\cdot\prod_{i=1}^\Nu p(\xu_i)\dif\xu_i$.
+  Eq.~\eqref{eq:mse-cond} is valid, if the following conditions are met:
+  (a) $\pr(\fD^-(g))>0$;
+  (b) $\ell$ satisfies Eq.~\eqref{eq:cond-sym-loss};
+  (c) $\Rn^-(g)\ge\alpha>0$;
+  (d) $\Nu\gg\Np$, such that we have $\Ru^-(g)-\hRu^-(g)\le2\alpha$ almost surely on $\fD^-(g)$.
+  In fact, given these four conditions, we have for any $0\le\beta\le C_\ell\pip$,
+  \begin{align}
+  \label{eq:mse-bound}%
+  \mse(\hRpu(g))-\mse(\tRpu(g))
+  \ge 3\beta^2\pr\{\tRpu(g)-\hRpu(g)>\beta\}.
+  \end{align}
+\end{theorem}
+
+The assumption (d) in Theorem~\ref{thm:mse} is explained as follows. Since \emph{U data can be much cheaper than P data} in practice, it would be natural to assume $\Nu$ is much larger and grows much faster than $\Np$, hence $\pr\{\Ru^-(g)-\hRu^-(g)\ge\alpha\}/\pr\{\hRp^-(g)-\Rp^-(g)\ge\alpha/\pip\}
+\propto \exp(\Np-\Nu)$ asymptotically.%
+\footnote{This can be derived as $\Np,\Nu\to\infty$ by applying the \emph{central limit theorem} to the two differences and then \emph{L'H\^{o}pital's rule} to the ratio of \emph{complementary error functions} \citep{chung68CPT}.}
+This means the contribution of $\Xu$ is negligible for making $(\Xp,\Xu)\in\fD^-(g)$ so that $\pr(\fD^-(g))$ exhibits exponential decay mainly in $\Np$. As $\pr\{\Ru^-(g)-\hRu^-(g)\ge2\alpha\}$ has stronger exponential decay in $\Nu$ than $\pr\{\Ru^-(g)-\hRu^-(g)\ge\alpha\}$ as well as $\Nu\gg\Np$, we made the assumption (d).
+
+%-------------------------------------------------------------------------
+\subsection{Estimation error}%
+
+While Theorems~\ref{thm:bias-consistency} and \ref{thm:mse} addressed the use of \eqref{eq:risk-pu-tilde} for evaluating the risk, we are likewise interested in its use for training classifiers. In what follows, we analyze the estimation error $R(\tgpu)-R(g^*)$, where $g^*$ is the true risk minimizer in $\cG$, i.e., $g^*=\argmin_{g\in\cG}R(g)$. As a common practice \citep{mohri12FML}, assume that $\ell(t,y)$ is Lipschitz continuous in $t$ for all $|t|\le C_g$ with a Lipschitz constant $L_\ell$.
+
+\begin{theorem}[Estimation error bound]
+  \label{thm:est-err}%
+  Assume that
+  (a) $\inf_{g\in\cG}\Rn^-(g)\ge\alpha>0$ and denote by $\Delta$ the right-hand side of Eq.~\eqref{eq:pr-diff-bound};
+  (b) $\cG$ is closed under negation, i.e., $g\in\cG$ if and only if $-g\in\cG$.
+  Then, for any $\delta>0$, with probability at least $1-\delta$,
+  \begin{align}
+  \label{eq:est-err-bound}%
+  R(\tgpu)-R(g^*)
+  \le 16L_\ell\pip\fR_{\Np,\prp}(\cG)
+  +8L_\ell\fR_{\Nu,p}(\cG)
+  +2C'_\delta\cdot\chi_{\Np,\Nu} +2C_\ell\pip\Delta,
+  \end{align}
+  where $C'_\delta=C_\ell\sqrt{\ln(1/\delta)/2}$, and $\fR_{\Np,\prp}(\cG)$ and $\fR_{\Nu,p}(\cG)$ are the Rademacher complexities of $\cG$ for the sampling of size $\Np$ from $\prp(x)$ and of size $\Nu$ from $p(x)$, respectively.
+\end{theorem}
+
+Theorem~\ref{thm:est-err} ensures that learning with \eqref{eq:risk-pu-tilde} is also consistent: as $\Np,\Nu\to\infty$, $R(\tgpu)\to R(g^*)$ and if $\ell$ satisfies \eqref{eq:cond-lin-loss}, all optimizations are convex and $\tgpu\to g^*$. For linear-in-parameter models with a bounded norm, $\fR_{\Np,\prp}(\cG)=\cO(1/\sqrt{\Np})$ and $\fR_{\Nu,p}(\cG)=\cO(1/\sqrt{\Nu})$, and thus $R(\tgpu)\to R(g^*)$ in $\cO_p(\pip/\sqrt{\Np}+1/\sqrt{\Nu})$.
+
+For comparison, $R(\hgpu)-R(g^*)$ can be bounded using a \emph{different proof technique} \citep{niu16nips}:
+\begin{align}
+\label{eq:est-err-bound-hat}%
+R(\hgpu)-R(g^*)
+\le 8L_\ell\pip\fR_{\Np,\prp}(\cG)
++4L_\ell\fR_{\Nu,p}(\cG)
++2C_\delta\cdot\chi_{\Np,\Nu},
+\end{align}
+where $C_\delta=C_\ell\sqrt{\ln(2/\delta)/2}$.
+%\begin{itemize}
+%  \item An extra term $2C_\ell\pip\Delta$ is appended due to the bias of $\tRpu(g)$. It is unessential since $\Delta\approx\cO(\exp(-\Np))$;
+%  \item Coefficients of the complexity terms are doubled due to the max in $\tRpu(g)$. It is substantial since the rate is determined by the complexity terms and $\chi_{\Np,\Nu}$.
+%\end{itemize}
+The differences of \eqref{eq:est-err-bound} and \eqref{eq:est-err-bound-hat} are completely from the differences of the corresponding uniform deviation bounds, i.e., the following lemma and Lemma~8 of \citep{niu16nips}.
+
+\begin{lemma}
+  \label{thm:uni-dev}%
+  Under the assumptions of Theorem~\ref{thm:est-err}, for any $\delta>0$, with probability at least $1-\delta$,
+  \begin{align}
+  \label{eq:uni-dev-bound}%
+  \sup\nolimits_{g\in\cG}|\tRpu(g)-R(g)|
+  \le 8L_\ell\pip\fR_{\Np,\prp}(\cG)
+  +4L_\ell\fR_{\Nu,p}(\cG)
+  +C'_\delta\cdot\chi_{\Np,\Nu} +C_\ell\pip\Delta.
+  \end{align}
+\end{lemma}
+
+Notice that $\hRpu(g)$ is point-wise while $\tRpu(g)$ is not due to the maximum, which makes Lemma~\ref{thm:uni-dev} much more difficult to prove than Lemma~8 of \citep{niu16nips}. The key trick is that after \emph{symmetrization}, we employ $|\max\{0,z\}-\max\{0,z'\}|\le|z-z'|$, making three differences of partial risks point-wise (see \eqref{eq:uni-dev-symmetrization} in the proof). As a consequence, we have to use a different Rademacher complexity \emph{with the absolute value inside the supremum} \citep{koltchinskii01tit,bartlett02jmlr}, whose \emph{contraction} makes the coefficients of \eqref{eq:uni-dev-bound} doubled compared with Lemma~8 of \citep{niu16nips}; moreover, we have to assume $\cG$ is closed under negation to change back to the standard Rademacher complexity \emph{without the absolute value} \citep{mohri12FML}. Therefore, the differences of \eqref{eq:est-err-bound} and \eqref{eq:est-err-bound-hat} are mainly due to different proof techniques and cannot reflect the intrinsic differences of empirical risk minimizers.
+
+%-------------------------------------------------------------------------
+\section{Experiments}
+\label{sec:experiment}%
+
+\begin{table}[b]
+  \vskip-2ex%
+  \caption{Specification of benchmark datasets, models, and optimition algorithms.}
+  \label{tab:dataset}
+  {\centering\small
+  \begin{tabular*}{\textwidth}{l|rrrr|l|l}
+    \toprule
+    Name & \# Train & \# Test & \# Feature & $\pip$ & Model $g(x;\theta)$ & Opt.\ alg.\ $\cA$ \\
+    \midrule
+    MNIST \citep{lecun98mnist} & $60,000$ & $10,000$ & $784$ & $0.49$
+    & 6-layer MLP with ReLU & Adam \citep{kingma15iclr} \\
+    epsilon \citep{yuan12epsilon} & $400,000$ & $100,000$ & $2,000$ & $0.50$
+    & 6-layer MLP with Softsign & Adam \citep{kingma15iclr} \\
+    20News \citep{lang95icml} & $11,314$ & $7,532$ & $61,188$ & $0.44$
+    & 5-layer MLP with Softsign & AdaGrad \citep{duchi11jmlr} \\
+    CIFAR-10 \citep{krizhevsky09cifar} & $50,000$ & $10,000$ & $3,072$ & $0.40$
+    & 13-layer CNN with ReLU & Adam \citep{kingma15iclr} \\
+    \bottomrule
+  \end{tabular*}}
+  \vskip1ex%
+  \begin{center}\begin{minipage}{0.97\textwidth}\footnotesize%
+    See \url{http://yann.lecun.com/exdb/mnist/} for MNIST,
+    \url{https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html} for epsilon,
+    \url{http://qwone.com/~jason/20Newsgroups/} for 20Newsgroups,
+    and \url{https://www.cs.toronto.edu/~kriz/cifar.html} for CIFAR-10.
+  \end{minipage}\end{center}
+\end{table}
+
+\begin{figure*}[t]
+  \centering
+  \subcaptionbox{MNIST}
+  {\includegraphics[width=0.5\textwidth]{deep_mnist}}%
+  \subcaptionbox{epsilon}
+  {\includegraphics[width=0.5\textwidth]{deep_epsilon}}\\
+  \subcaptionbox{20News}
+  {\includegraphics[width=0.5\textwidth]{deep_20news}}%
+  \subcaptionbox{CIFAR-10}
+  {\includegraphics[width=0.5\textwidth]{deep_cifar10}}
+  \caption{Experimental results of training deep neural networks.}
+  \label{fig:experiment-deep}
+  \vskip-3ex%
+\end{figure*}
+
+In this section, we compare PN, unbiased PU (uPU) and non-negative PU (nnPU) learning experimentally. We focus on training deep neural networks, as uPU learning usually does not overfit if a linear-in-parameter model is used \citep{niu16nips} and nothing needs to be fixed.
+
+Table~\ref{tab:dataset} describes the specification of benchmark datasets. MNIST, 20News and CIFAR-10 have 10, 7 and 10 classes originally, and we constructed the P and N classes from them as follows: MNIST was preprocessed in such a way that 0, 2, 4, 6, 8 constitute the P class, while 1, 3, 5, 7, 9 constitute the N class; for 20News, `alt.', `comp.', `misc.' and `rec.' make up the P class, and `sci.', `soc.' and `talk.' make up the N class; for CIFAR-10, the P class is formed by `airplane', `automobile', `ship' and `truck', and the N class is formed by `bird', `cat', `deer', `dog', `frog' and `horse'. The dataset epsilon has 2 classes and such a construction is unnecessary.
+
+Three learning methods were set up as follows:
+(A) for PN, $n_p=1,000$ and $n_n=(\pin/2\pip)^2n_p$;
+(B) for uPU, $n_p=1,000$ and $n_u$ is the total number of training data;
+(C) for nnPU, $n_p$ and $n_u$ are exactly same as uPU.
+For uPU and nnPU, P and U data were dependent, because neither $\hRpu(g)$ in Eq.~\eqref{eq:risk-pu-hat} nor $\tRpu(g)$ in Eq.~\eqref{eq:risk-pu-tilde} requires them to be independent. The choice of $n_n$ was motivated by \citep{niu16nips} and may make nnPU potentially better than PN as $\Nu\to\infty$ (whether $\Np<\infty$ or $\Np\le\Nu$).
+
+The model for MNIST was a 6-layer \emph{multilayer perceptron}~(MLP) with ReLU \citep{nair10icml} (more specifically, $d$-300-300-300-300-1). For epsilon, the model was similar while the activation was replaced with Softsign \citep{glorot10aistats} for better performance. For 20News, we borrowed the pre-trained word embeddings from GloVe \citep{pennington14emnlp}, and the model can be written as $d$-avg\_pool(word\_emb($d$,300))-300-300-1, where word\_emb($d$,300) retrieves 300-dimensional word embeddings for all words in a document, avg\_pool executes average pooling, and the resulting vector is fed to a 4-layer MLP with Softsign. The model for CIFAR-10 was an \emph{all convolutional net} \citep{springenberg15iclr}: (32*32*3)-[C(3*3,96)]*2-C(3*3,96,2)-[C(3*3,192)]*2-C(3*3,192,2)-C(3*3,192)-C(1*1,192)-C(1*1,10)-1000-1000-1, where the input is a 32*32 RGB image, C(3*3,96) means 96 channels of 3*3 convolutions followed by ReLU, [ $\cdot$ ]*2 means there are two such layers, C(3*3,96,2) means a similar layer but with stride 2, etc.; it is one of the best architectures for CIFAR-10. Batch normalization \citep{ioffe15icml} was applied before hidden layers. Furthermore, the sigmoid loss $\ellsig$ was used as the surrogate loss and an $\ell_2$-regularization was also added. The resulting objectives were minimized by Adam \citep{kingma15iclr} on MNIST, epsilon and CIFAR-10, and by AdaGrad \citep{duchi11jmlr} on 20News; we fixed $\beta=0$ and $\gamma=1$ for simplicity.
+
+The experimental results are reported in Figure~\ref{fig:experiment-deep}, where means and standard deviations of training and test risks based on the same 10 random samplings are shown. We can see that uPU overfitted training data and nnPU fixed this problem. Additionally, given limited N data, nnPU outperformed PN on MNIST, epsilon and CIFAR-10 and was comparable to it on 20News. In summary, with the proposed non-negative risk estimator, we are able to use very flexible models given limited P data.
+
+\begin{figure*}[t]
+  \centering
+  \subcaptionbox{MNIST}
+  {\includegraphics[width=0.5\textwidth]{misspecified_mnist}}%
+  \subcaptionbox{epsilon}
+  {\includegraphics[width=0.5\textwidth]{misspecified_epsilon}}\\
+  \subcaptionbox{20News}
+  {\includegraphics[width=0.5\textwidth]{misspecified_20news}}%
+  \subcaptionbox{CIFAR-10}
+  {\includegraphics[width=0.5\textwidth]{misspecified_cifar10}}
+  \caption{Experimental results given $\pip'\in\{0.8\pip,0.9\pip,\ldots,1.2\pip\}$.}
+  \label{fig:experiment-misspecified}
+  \vskip-2ex%
+\end{figure*}
+
+We further tried some cases where $\pip$ is misspecified, in order to simulate PU learning in the wild, where we must suffer from errors in estimating $\pip$. More specifically, we tested nnPU learning by replacing $\pip$ with $\pip'\in\{0.8\pip,0.9\pip,\ldots,1.2\pip\}$ and giving $\pip'$ to the learning method, so that it would regard $\pip'$ as $\pip$ during the entire training process. The experimental setup was exactly same as before except the replacement of $\pip$.
+
+The experimental results are reported in Figure~\ref{fig:experiment-misspecified}, where means of test risks of nnPU based on the same 10 random samplings are shown, and the best test risks are identified (horizontal lines are the best mean test risks and vertical lines are the epochs when they were achieved). We can see that
+on MNIST, the more misspecification was, the worse nnPU performed, while under-misspecification hurt more than over-misspecification;
+on epsilon, the cases where $\pip'$ equals to $\pip$, $1.1\pip$ and $1.2\pip$ were comparable, but the best was $\pip'=1.1\pip$ rather than $\pip'=\pip$;
+on 20News, these three cases became different, such that $\pip'=\pip$ was superior to $\pip'=1.2\pip$ but inferior to $\pip'=1.1\pip$; at last on CIFAR-10, $\pip'=\pip$ and $\pip'=1.1\pip$ were comparable again, and $\pip'=1.2\pip$ was the winner.
+
+In all the experiments, we have fixed $\beta=0$, which may explain this phenomenon. Recall that uPU overfitted seriously on all the benchmark datasets, and note that the larger $\pip'$ is, the more different nnPU is from uPU. Therefore, the replacement of $\pip$ with some $\pip'>\pip$ introduces additional bias of $\tRpu(g)$ in estimating $R(g)$, but it also pushes $\tRpu(g)$ away from $\hRpu(g)$ and then pushes nnPU away from uPU. This may result in lower test risks given some $\pip'$ slightly larger than $\pip$ as shown in Figure~\ref{fig:experiment-misspecified}. This is also why under-misspecified $\pip'$ hurt more than over-misspecified $\pip'$.
+
+All the experiments were done with \emph{Chainer} \citep{tokui15mlsys}, and our implementation based on it is available at \url{https://github.com/kiryor/nnPUlearning}.
+
+%-------------------------------------------------------------------------
+\section{Conclusions}
+\label{sec:concl}%
+
+We proposed a non-negative risk estimator for PU learning that follows and improves on the state-of-the-art unbiased risk estimators. No matter how flexible the model is, it will not go negative as its unbiased counterparts. It is more robust against overfitting when being minimized, and training very flexible models such as deep neural networks given limited P data becomes possible. We also developed a large-scale PU learning algorithm. Extensive theoretical analyses were presented, and the usefulness of our non-negative PU learning was verified by intensive experiments. A promising future direction is extending the current work to semi-supervised learning along \cite{sakai17icml}.
+
+\subsubsection*{Acknowledgments}
+
+GN and MS were supported by JST CREST JPMJCR1403 and GN was also partially supported by Microsoft Research Asia.
+
+%-------------------------------------------------------------------------
+{\small\bibliography{pu_nnre}}
+
+\clearpage
+\appendix
+\input{supp_experiment}
+\input{proofs}
+
+\end{document}

@@ -1,0 +1,947 @@
+\documentclass[12pt]{article}
+%Yu
+
+
+%\newcommand{\T}{{\hspace{-0.25ex}\top\hspace{-0.25ex}}}
+\newcommand{\dif}{\mathrm{d}}
+\newcommand{\pr}{\mathrm{Pr}}
+\newcommand{\var}{\mathrm{Var}}
+\newcommand{\mse}{\mathrm{MSE}}
+\newcommand{\bE}{\mathbb{E}}
+\newcommand{\bR}{\mathbb{R}}
+\newcommand{\cA}{\mathcal{A}}
+\newcommand{\cG}{\mathcal{G}}
+\newcommand{\cO}{\mathcal{O}}
+\newcommand{\cX}{\mathcal{X}}
+\newcommand{\fD}{\mathfrak{D}}
+\newcommand{\fR}{\mathfrak{R}}
+
+\newcommand{\prp}{p_\mathrm{p}}
+\newcommand{\prn}{p_\mathrm{n}}
+\newcommand{\pip}{\pi_\mathrm{p}}
+\newcommand{\pin}{\pi_\mathrm{n}}
+\newcommand{\Xp}{\cX_\mathrm{p}}
+\newcommand{\Xn}{\cX_\mathrm{n}}
+\newcommand{\Xu}{\cX_\mathrm{u}}
+\newcommand{\xp}{x^\mathrm{p}}
+\newcommand{\xn}{x^\mathrm{n}}
+\newcommand{\xu}{x^\mathrm{u}}
+\newcommand{\Np}{{n_\mathrm{p}}}
+\newcommand{\Nn}{{n_\mathrm{n}}}
+\newcommand{\Nu}{{n_\mathrm{u}}}
+
+\newcommand{\Rp}{R_\mathrm{p}}
+\newcommand{\Rn}{R_\mathrm{n}}
+\newcommand{\Ru}{R_\mathrm{u}}
+\newcommand{\hRp}{\widehat{R}_\mathrm{p}}
+\newcommand{\hRn}{\widehat{R}_\mathrm{n}}
+\newcommand{\hRu}{\widehat{R}_\mathrm{u}}
+\newcommand{\hRpn}{\widehat{R}_\mathrm{pn}}
+\newcommand{\hRpu}{\widehat{R}_\mathrm{pu}}
+\newcommand{\tRpu}{\widetilde{R}_\mathrm{pu}}
+\newcommand{\hgpn}{\widehat{g}_\mathrm{pn}}
+\newcommand{\hgpu}{\widehat{g}_\mathrm{pu}}
+\newcommand{\tgpu}{\widetilde{g}_\mathrm{pu}}
+
+\newcommand{\ellsig}{\ell_\mathrm{sig}}
+
+
+
+% Yu
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+
+\usepackage{geometry}
+ \geometry{
+ a4paper,
+ total={170mm,250mm},
+ left=31mm,
+ right=31mm,
+ top=34mm,
+ bottom=29mm
+ }
+
+\usepackage{amsfonts,amsmath}
+\usepackage{mathtools}
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{tikz-cd}
+\usepackage{mathrsfs}
+\usepackage{subcaption}
+\usepackage{multicol}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{url}
+\hypersetup{
+   colorlinks=true,
+    linkcolor=blue,
+    citecolor=red,
+    urlcolor=cyan,
+}
+%\usepackage{yfonts}
+\usepackage{mathdots}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\textit{}}
+\lhead{\small}
+\cfoot{\thepage}
+
+\setcounter{MaxMatrixCols}{20} % Enable us to create matrices with more than 10 columns
+
+%yu
+\DeclareMathOperator{\sign}{\mathrm{sign}}
+\DeclareMathOperator*{\argmin}{\mathrm{arg\,min}}
+\DeclareMathOperator*{\argmax}{\mathrm{arg\,max}}
+%
+
+
+\title{Positive-Unlabeled Learning with Non-Negative Risk Estimator}
+
+\author{\textit{Xinsong Ma, Chenglin Yu}\footnote{V587 Group}}
+
+\date{\today}
+
+\setlength{\footnotesep}{0.5cm}
+\setlength{\skip\footins}{1cm}
+
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{cor}[thm]{Corollary}
+\newtheorem{prop}[thm]{Proposition}
+\newtheorem{defn}[thm]{Definition}
+\newtheorem{obs}[thm]{Observation}
+\theoremstyle{definition}
+\newtheorem{eg}[thm]{Example}
+\newtheorem{ex}[thm]{Exercise}
+
+
+\begin{document}
+	
+\maketitle
+
+%\begin{abstract}
+%A concise summary of the whole reading report and main findings
+%\end{abstract}
+\tableofcontents
+\section{Background}
+\subsection{What is PU learning?}
+We have only Positive and Unlabeled examples. We need to learning something. For example, 
+\begin{itemize}
+		\item train a binary classifier (binary classification)
+		\item matrix completion
+\end{itemize} 
+
+In this paper, we focus on binary classification. 
+
+\subsection{Why PU learning?}
+Classification when engative data is unavailable. 
+Example: click advertisement
+\begin{itemize}
+	\item clicked: positive (interesting)
+	\item non-clicked: unlabeled (not interesting or unseen)
+\end{itemize}
+
+
+\subsection{Notation}
+ \begin{enumerate}
+	\item $X \in \mathbb{R}^{d}$, $d\in \mathbb{N}$ is the input random variable
+	\item $ Y \in \{\pm 1\}$ output random variable
+	\item $p(x,y)$ be the underlying joint density of (X,Y)
+	\item $p_{\mathrm{p}}(x)=p(x | Y=+1)$ the conditional pdf of $X$ given $Y = +1$ 
+	\item $p_{\mathrm{n}}(x)=p(x | Y=-1)$ the conditional pdf of $X$ given $Y = -1$ 
+	\item $\pi_p = p(Y = +1)$ the class-prior probability
+	\item $\pi_n = p(Y = -1) = 1 - p(Y = +1) = 1-\pi_p$
+	\item $g: \mathbb{R}^{d} \rightarrow \mathbb{R}$ decision function
+	\item $\ell: \mathbb{R} \times\{\pm 1\} \rightarrow \mathbb{R}$ loss function, the value of $\ell (t,y)$ means the loss incurred by predicting an ouput $t$ when the ground truth is $y$.
+	\item $R(g)=\mathbb{E}_{(X, Y) \sim p(x, y)}[\ell(g(X), Y)]\\
+	= p(Y = +1) \mathbb{E}_{X \sim p_{\mathrm{p}}}[\ell (g(X), +1)] + 
+	p(Y = -1) \mathbb{E}_{X \sim p_{\mathrm{n}}}[\ell (g(X), -1)]\\
+	=\pi_{\mathrm{p}}\mathbb{E}_{\mathrm{p}}[\ell (g(X), +1)] + \pi_{\mathrm{n}}\mathbb{E}_{\mathrm{n}}[\ell (g(X), -1)]\\=
+	\pi_{\mathrm{p}} R_{\mathrm{p}}^{+}(g)+\pi_{\mathrm{n}} R_{\mathrm{n}}^{-}(g)$
+	
+		\item $R_{\mathrm{p}}^{-}(g)=\mathbb{E}_{\mathrm{p}}[\ell(g(X),-1)]
+	$
+	
+	\item $R_{\mathrm{u}}^{-}(g)=\mathbb{E}_{\mathrm{u}}[\ell(g(X),-1)]$
+	\item $\widehat{R}_{\mathrm{p}}^{+}(g) = \left(1 / n_{\mathrm{p}}\right) \sum_{i=1}^{n_{\mathrm{p}}} \ell\left(g\left(x_{i}^{\mathrm{p}}\right),+1\right)$ 
+	
+	
+		\item  $\widehat{R}_{\mathrm{n}}^{-}(g)=\left(1 / n_{\mathrm{n}}\right) \sum_{i=1}^{n_{\mathrm{n}}} \ell\left(g\left(x_{i}^{\mathrm{n}}\right),-1\right)$
+		
+		
+		\item  $\widehat{R}_{\mathrm{u}}^{-}(g)=\left(1 / n_{\mathrm{u}}\right) \sum_{i=1}^{n_{\mathrm{u}}} \ell\left(g\left(x_{i}^{\mathrm{u}}\right),-1\right)$
+	
+		\item  $\widehat{R}_{\mathrm{pn}}(g)=\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{+}(g)+\pi_{\mathrm{n}} \widehat{R}_{\mathrm{n}}^{-}(g)$
+	
+		
+	\item $\mathcal{X}_{\mathrm{p}}=\left\{x_{i}^{\mathrm{p}}\right\}_{i=1}^{n_{\mathrm{p}}} $
+	
+	\item  $\mathcal{X}_{\mathrm{u}}=\left\{x_{i}^{\mathrm{u}}\right\}_{i=1}^{n_{\mathrm{u}}} $
+
+
+	
+
+	
+	\item $\mathcal{G}$ function class (hypothesis class)
+	
+	\item $\mathfrak{R}_{n, q}(\mathcal{G})=\mathbb{E}_{\mathcal{X} \sim q^{n}} \mathbb{E}_{\sigma}\left[\sup _{g \in \mathcal{G}} \frac{1}{n} \sum_{x_{i} \in \mathcal{X}} \sigma_{i} g\left(x_{i}\right)\right]$ Rademacher complexity of $\mathcal{G}$ for the sampling of size $n$ from $q(x)$.
+	
+	\item $\widehat{g}_\mathrm{pn}$ the empirical minimizers of $\widehat{R}_\mathrm{pn}(g)$
+	
+	\item 	$\widehat{R}_{\mathrm{pu}}(g)=\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{+}(g)-\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{-}(g)+\widehat{R}_{\mathrm{u}}^{-}(g)$
+	
+	\item $\widehat{g}_\mathrm{pu}$ the empirical minimizers of $\widehat{R}_\mathrm{pu}(g)$
+	
+	\item $ \widetilde{R}_{\mathrm{pu}}(g)=\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{+}(g)+\max \left\{0, \widehat{R}_{\mathrm{u}}^{-}(g)-\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{-}(g)\right\}$
+		
+	\item $\widetilde{g}_\mathrm{pu}$ the empirical minimizers of $\widetilde{R}_\mathrm{pu}(g)$
+\end{enumerate}
+
+\section{Preliminaries}
+
+\subsection{The bias of a point estimator}
+According to Definition 7.3.2 of \cite{casella2002statistical}
+
+\begin{defn}
+	The bias of a point estimator $W$ of a parameter $\theta$ is the difference between the expected value of $W$ and $\theta$; that is, $\operatorname{Bias}_{\theta} W=\mathrm{E}_{\theta} W-\theta$. 
+	
+	An estimator whose bias is identically equal to 0 called unbiased and satisifes $\mathrm{E}_{\theta} W=\theta$ for all $\theta$
+\end{defn}
+
+\subsection{MSE of an estimator}
+Mean Squared Error is a method of evaluating esimators. We refer to the Definition 7.3.1 of \cite{casella2002statistical}.
+
+\begin{defn}
+	The mean squared error (MSE) of an estimator $W$ of a parameter $\theta$  is the function of $\theta$ defined by $\mathrm{E}_{\theta}(W-\theta)^{2}$
+\end{defn}
+
+\subsection{Consistency of an estimator}
+
+Consistency is an asymptotic property\footnote{properties describing the behavior of a procedure as the sample size becomes infinite} of an estimator.
+We refer to section 10.1.1 of \cite{casella2002statistical}. 
+
+The property of consistency seems to be quite a fundamental one, requiring that the estimator converges to the "correct" value as the sample size becomes infinite. It is such a fundamental property that the worth of an inconsistent estimator should be questioned (or at least vigorously investigated).
+
+Consistency (as well as all asymptotic properties) concerns a sequence of estimators rather than a single estimator, although it is common to speak of a "consistent estimator." If we observe $X_l, X_2 , •••$ according to a distribution $f(x|\theta)$, we can construct a sequence of estimators $W_n = W_n(X_1, ... , X_n)$ merely by performing the same estimation procedure for each sample size n. For example, $\bar{X}_{1}=X_{1}$, $\bar{X}_2 = (X_{1}+X_{2} )/2, \bar{X}_3 = (X_{1}+X_{2}+X_{3} )/3$, etc. We can now define a consistent sequence.
+\begin{defn}
+	A sequence of estimators $W_{n}=W_{n}\left(X_{1}, \ldots, X_{n}\right)$ is a consistent sequence of estimators of the parameter $\theta$ if, for every $\epsilon>0$ and every $\theta \in \Theta$
+	\begin{equation*}
+	\lim _{n \rightarrow \infty} P_{\theta}\left(\left|W_{n}-\theta\right|<\epsilon\right)=1
+	\end{equation*}
+\end{defn}
+
+\subsection{Almost surely}
+
+We refer to \href{https://en.wikipedia.org/wiki/Almost_surely}{wiki}
+
+In probability theory, an event is said to happen almost surely if it happens with probability 1.
+
+Why "almost" surely? \href{https://math.stackexchange.com/questions/1443015/why-do-we-say-almost-surely-in-probability-theory}{math.stackexchange}
+
+Consider choosing a real number uniformly at random from the interval [0,1]. The event "1/2 will not be chosen" has probability 1, but it is still possible for 1/2 to be chosen. Thus, even if the event happens with probability 1, we say the event "1/2 will not be chosen" happen almost surely, rather than happen surely!
+
+To sum up, almost surely means "happen with probability 1", rather than surely happen.
+
+The concept is essentially analogous to the concept of "almost everywhere" in measure theory.
+
+
+\subsection{Estimation error bound of a hypothesis}
+According to section 2.4.3 Estimation and approximation errors of "Foundation of Machine Learning", The diﬀerence between the error of a hypothesis $h\in H$ and the Bayes error can be decomposed as:The diﬀerence between the error of a hypothesis $h\in H$ and the Bayes error can be decomposed as:
+
+$$
+R(h)-R^{*}=\underbrace{\left(R(h)-R\left(h^{*}\right)\right)}_{\text {estimation }}+\underbrace{\left(R\left(h^{*}\right)-R^{*}\right)}_{\text {approximation }}
+$$
+
+where $h^*$ is a hypothesis in $H$ with minimal error, or a \emph{best-in-class hypothesis}.
+
+\subsection{The infinity norm of a function}
+We refer to the definition of $L^{\infty}$ -Norm in this \href{http://faculty.bard.edu/belk/math461/LpFunctions.pdf}{lecture}\footnote{\href{http://faculty.bard.edu/belk/math461/LpFunctions.pdf}{http://faculty.bard.edu/belk/math461/LpFunctions.pdf}}.
+
+\begin{defn}{$\boldsymbol{L}^{\infty}$ -norm}
+	Let $(X, \mu)$ be a measure space, and let $f$ be a measurable function on $X .$ The $\boldsymbol{L}^{\infty}$ -norm of $f$ is defined as follows:
+	\[
+	\|f\|_{\infty}=\min \{M \in[0, \infty]\big| | f | \leq M \text { almost everywhere }\}
+	\]
+	We say that $f$ is an $\boldsymbol{L}^{\infty}$ function if $\|f\|_{\infty}<\infty$
+\end{defn}
+
+
+\begin{paragraph}
+	"Almost everywhere" from \href{https://en.wikipedia.org/wiki/Almost_everywhere#Definition}{wiki}
+	
+	If $(X, \Sigma, \mu)$ is a measure space, a property $P$ is said to hold almost everywhere in $X$ if there exists a set $N \in \Sigma$ with $\mu(N)=0$, and all $x \in X \backslash N$ have the property $P$. 
+	
+	Another common way of expressing the same thing is to say that "almost every point satisfies $P$ ", or that "for almost every $x, P(x)$ holds".
+	It is not required that the set $\{x \in X: \neg P(x)\}$ has measure 0 ; it may not belong to $\Sigma$. By the above definition, it is sufficient that $\{x \in X: \neg P(x)\}$ be contained in some set $N$ that is measurable and has measure 0
+\end{paragraph}
+
+
+\subsection{Mcdiarmid's inequality}
+Refer to \href{https://en.wikipedia.org/wiki/Doob_martingale#McDiarmid's_inequality}{McDiarmid's inequality} in wiki.
+
+Consider independent random variables $X_{1}, X_{2}, \ldots X_{n}$ on probability space $(\Omega, \mathcal{F}, \mathrm{P})$ where $X_{i} \in \mathcal{X}_{i}$ for all $i$ and a mapping $f: \mathcal{X}_{1} \times \mathcal{X}_{2} \times \cdots \times \mathcal{X}_{n} \rightarrow \mathbb{R}$. Assume there exist
+constant $c_{1}, c_{2}, \ldots, c_{n}$ such that for all $i$
+\[
+\sup _{x_{1}, \cdots, x_{i-1}, x_{i}, x_{i}^{\prime}, x_{i+1}, \cdots, x_{n}}\left|f\left(x_{1}, \ldots, x_{i-1}, x_{i}, x_{i+1}, \cdots, x_{n}\right)-f\left(x_{1}, \ldots, x_{i-1}, x_{i}^{\prime}, x_{i+1}, \cdots, x_{n}\right)\right| \leq c_{i}
+\]
+(In other words, changing the value of the $i$ th coordinate $x_{i}$ changes the value of $f$ by at most
+$c_{i} .$ ) Then, for any $\epsilon>0$
+\[
+\begin{array}{l}
+\mathrm{P}\left(f\left(X_{1}, X_{2}, \cdots, X_{n}\right)-\mathbb{E}\left[f\left(X_{1}, X_{2}, \cdots, X_{n}\right)\right] \geq \epsilon\right) \leq \exp \left(-\frac{2 \epsilon^{2}}{\sum_{i=1}^{n} c_{i}^{2}}\right) \\
+\mathrm{P}\left(f\left(X_{1}, X_{2}, \cdots, X_{n}\right)-\mathbb{E}\left[f\left(X_{1}, X_{2}, \cdots, X_{n}\right)\right] \leq-\epsilon\right) \leq \exp \left(-\frac{2 \epsilon^{2}}{\sum_{i=1}^{n} c_{i}^{2}}\right)
+\end{array}
+\]
+and
+\[
+\mathrm{P}\left(\left|f\left(X_{1}, X_{2}, \cdots, X_{n}\right)-\mathbb{E}\left[f\left(X_{1}, X_{2}, \cdots, X_{n}\right)\right]\right| \geq \epsilon\right) \leq 2 \exp \left(-\frac{2 \epsilon^{2}}{\sum_{i=1}^{n} c_{i}^{2}}\right)
+\]
+
+\subsection{Contraction Lemma}
+Lemma 26.9 of \cite{shalev2014understanding}
+\begin{lem}
+	(Contraction Lemma). For each i $\in[m],$ let $\phi_{i}: \mathbb{R} \rightarrow \mathbb{R}$ be a p-Lipschitz function; namely, for all $\alpha, \beta \in \mathbb{R}$ we have $\left|\phi_{i}(\alpha)-\phi_{i}(\beta)\right| \leq \rho|\alpha-\beta| .$ For $\mathbf{a} \in \mathbb{R}^{m}$ let
+	$\boldsymbol{\phi}(\mathbf{a})$ denote the vector $\left(\phi_{1}\left(a_{1}\right), \ldots, \phi_{m}\left(a_{m}\right)\right) .$ 
+	Let $A=\left\{\mathbf{a}_{1}, \ldots, \mathbf{a}_{N}\right\}$ be a finite set of vectors in $\mathbb{R}^{m}$.
+	Let $\boldsymbol{\phi} \circ A=\{\boldsymbol{\phi}(\mathbf{a}): a \in A\} .$ Then
+	\[
+	R(\boldsymbol{\phi} \circ A) \leq \rho R(A)
+	\]
+\end{lem}
+
+
+Theorem 4.12 of \cite{ledoux2013probability}
+\begin{thm}
+	$\operatorname{Let} F: \mathbb{R}_{+} \rightarrow \mathbb{R}_{+}$ be convex and increasing. Let further
+	$\varphi_{i}: \mathbb{R} \rightarrow \mathbb{R}, i \leq N,$ be contractions such that $\varphi_{i}(0)=0 .$ Then, for any bounded subset $T$ in $\mathbb{R}^{N}$
+	\[
+	\mathbb{E} F\left(\frac{1}{2}\left\|\sum_{i=1}^{N} \varepsilon_{i} \varphi_{i}\left(t_{i}\right)\right\|_{T}\right) \leq \mathbb{E} F\left(\left\|\sum_{i=1}^{N} \varepsilon_{i} t_{i}\right\|_{T}\right)
+	\]
+\end{thm}
+
+\section{Progress and Motivation}
+\subsection{Earlier}
+\subsection{unbiased PU learning}
+Since our goal is minimize the same expected riks as PN learning:
+$$
+R(g)=\mathbb{E}_{(X, Y) \sim p(x, y)}[\ell(g(X), Y)]=\pi_{\mathrm{p}} R_{\mathrm{p}}^{+}(g)+\pi_{\mathrm{n}} R_{\mathrm{n}}^{-}(g)
+$$
+Since we don't know the true distribution, we often minimize the empirical risk (which is an estimator of the true risk), 
+
+In PN learning, thanks to the availability of $\mathcal{X}_p$ and $\mathcal{X}_n$, $R(g)$ can be approximated directly by:
+\begin{equation}
+	\widehat{R}_{\mathrm{pn}}(g)=\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{+}(g)+\pi_{\mathrm{n}} \widehat{R}_{\mathrm{n}}^{-}(g)
+\end{equation}
+Since $\mathbb{E}[\widehat{R}_{\mathrm{pn}}(g)]=R(g)$, $\widehat{R}_{\mathrm{pn}}(g)$ is unbiased.
+
+In PU learning, $\mathcal{X}_n$ is unavailable. We can not get a unbiased estimator of $R_{\mathrm{n}}^{-}(g)$ directly.  However, we often assume the \emph{Two-sample problem setting of PU learning:}
+
+\begin{itemize}
+	\item $\mathcal{X}_{\mathrm{p}}=\left\{x_{i}^{\mathrm{p}}\right\}_{i=1}^{n_{\mathrm{p}}} \sim p_{\mathrm{p}}(x)$
+	
+	\item $\mathcal{X}_{\mathrm{u}}=\left\{x_{i}^{\mathrm{u}}\right\}_{i=1}^{n_{\mathrm{y}}} \sim p(x)$
+	
+	\item $p(x) = \pi_\mathrm{p}p_\mathrm{p}(x) + \pi_\mathrm{n}p_\mathrm{n}(x)$
+\end{itemize}
+
+We want to use the assumption to approximate $R_{\mathrm{n}}^{-}(g)$ indirectly.
+
+Since 
+
+$$
+R_{\mathrm{n}}^{-}(g)=\mathbb{E}_{\mathrm{n}}[\ell(g(X),-1)]
+$$
+
+Motivated by this, we consider this random variable, $\ell(g(X),-1)$, 
+
+We know
+$$p(x) = \pi_\mathrm{p}p_\mathrm{p}(x) + \pi_\mathrm{n}p_\mathrm{n}(x)$$
+
+Taking expectation of $\ell(g(X),-1)$ according to $p(x)$, $p_{\mathrm{p}}(x)$, $p_{\mathrm{n}}(x)$, we have 
+
+$$
+\pi_{\mathrm{n}} R_{\mathrm{n}}^{-}(g)=R_{\mathrm{u}}^{-}(g)-\pi_{\mathrm{p}} R_{\mathrm{p}}^{-}(g)
+$$
+
+Taking it into 
+
+$$
+R(g)=\pi_{\mathrm{p}} R_{\mathrm{p}}^{+}(g)+\pi_{\mathrm{n}} R_{\mathrm{n}}^{-}(g)
+$$
+
+We have
+$$
+R(g)=\pi_{\mathrm{p}} R_{\mathrm{p}}^{+}(g)+R_{\mathrm{u}}^{-}(g)-\pi_{\mathrm{p}} R_{\mathrm{p}}^{-}(g)
+$$
+
+Then $R(g)$ can be approximated indirectly by 
+\begin{equation}
+	\widehat{R}_{\mathrm{pu}}(g)=\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{+}(g)-\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{-}(g)+\widehat{R}_{\mathrm{u}}^{-}(g)
+\end{equation}
+
+This estimator is also unbiased. 
+
+\cite{niu2016theoretical} analyzed the estimation error bound of $\widehat{g}_\mathrm{pn}$ and $\widehat{g}_\mathrm{pu}$, respectively. And \cite{niu2016theoretical} proved that the estimation error bound (EEB) of $\widehat{g}_\mathrm{pu}$ is tighter than EEB of $\widehat{g}_\mathrm{pn}$ if the followingt  2 conditions are satisifed:
+
+\begin{enumerate}
+	\item $\ell$ satisfies $\ell(t,+1)+\ell(t,-1)  = 1$ and is Lipschitz continuous
+	\item The rademacher complexity of $\mathcal{G}$ satisifes: There is a constant $C_{\mathcal{G}}>0$ such that $\mathfrak{R}_{n, q}(\mathcal{G}) \leq C_{\mathcal{G}} / \sqrt{n}$ for any marginal density $q(x)\in \left\{p(x), p_{+}(x), p_{-}(x)\right\}$
+\end{enumerate}
+
+The estimation error bounds contains the Rademacher complexity. Therefore, the critical assumption on the Rademacher complexity is indisensable, otherwise it will be difficult for EEB of $\widehat{g}_\mathrm{pu}$  to be tighter than $\widehat{g}_\mathrm{pn}$ 
+
+For example, If $\mathcal{G}=\left\{g |\|g\|_{\infty} \leq C_{g}\right\}$ where $C_{g}>0$ is a constant, i.e., it has all measurable functions with some bounded norm, then $\mathfrak{R}_{n, q}(\mathcal{G})=\mathcal{O}(1)$  for any $n$ and $q(x)$ and all bounds become trivial\footnote{Q: How to obtain the $\mathcal{O}(1)$  result? }.
+
+since 
+\begin{equation*}
+\begin{aligned}
+  	&\widehat{R}_{\mathrm{pu}}(g)
+  	=\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{+}(g)-\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{-}(g)+\widehat{R}_{\mathrm{u}}^{-}(g)\\
+  &=\pi_\mathrm{p}\left(1 / n_{\mathrm{p}}\right) \sum_{i=1}^{n_{\mathrm{p}}} \ell\left(g\left(x_{i}^{\mathrm{p}}\right),+1\right)\\
+  &-\pi_\mathrm{p}\left(1 / n_{\mathrm{p}}\right) \sum_{i=1}^{n_{\mathrm{p}}} \ell\left(g\left(x_{i}^{\mathrm{p}}\right),-1\right)
+  +\left(1 / n_{\mathrm{u}}\right) \sum_{i=1}^{n_{\mathrm{u}}} \ell\left(g\left(x_{i}^{\mathrm{u}}\right),-1\right)
+\end{aligned}
+\end{equation*}
+
+ If there is a classifier that can perfectly separate P and U, Then training error w.r.t. 0-1 loss is:
+ $$\pi_{\mathrm{p}}\cdot 0 -\pi_{\mathrm{p}}\cdot 1 + 0 <0$$
+ 
+ Moreover, if $\ell$ is not bounded from above, $\widehat{R}_{\mathrm{pu}}(g)$ becomes not bounded from  below, i.e., it may diverge to $-\infty$.  The problem of overfitting may occur.
+ 
+ Thus, in oder to obtain high quality $\widehat{g}_{\mathrm{pu}}$, $\mathcal{G}$ cannot be too complex, or equivalently, the model of $g$ cannot be too flexible, such as being deep neural network.
+ 
+ Nevertheless, we have no choice sometimes: we are interested in using flexible models, while labeling more data is out of our control. Can we alleviate the overfitting problem with neither changing the model nor labeling more data?
+ 
+ In the expermiment, we note that $\widehat{R}_{\mathrm{pu}}\left(\widehat{g}_{\mathrm{pu}}\right)$ keeps decreasing and goes negative. This should be fixed since $R(g)\ge 0$ for any $g$. Specifically, it holds that $R_{\mathrm{u}}^{-}(g)-\pi_{\mathrm{p}} R_{\mathrm{p}}^{-}(g)=\pi_{\mathrm{n}} R_{\mathrm{n}}^{-}(g) \geq 0$, but $\widehat{R}_{\mathrm{u}}^{-}(g)-\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{-}(g) \geq 0$ is not always true, which is a potential reason for uPU to overfit. Based on this key observation, we propose a \emph{non-negative risk estimator} for PU learning:
+ \begin{equation}
+ \widetilde{R}_{\mathrm{pu}}(g)=\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{+}(g)+\max \left\{0, \widehat{R}_{\mathrm{u}}^{-}(g)-\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{-}(g)\right\}
+ \end{equation}
+ 
+ We refer to the process of obtaining $\widehat{R}_{\mathrm{pu}}$ as non-negative PU(nnPU) learning.
+ 
+ We will analyze $\widetilde{R}_{\mathrm{pu}}(g)$ and $\widetilde{g}_{\mathrm{pu}}$ respectively.
+ 
+ \section{$\widetilde{R}_{\mathrm{pu}}(g)$ as an estimator}
+ 
+ \subsection{Bias}
+ Bias: $\mathbb{E}_{\mathcal{X}_{\mathrm{p}}, \mathcal{X}_{\mathrm{u}}}\left[\widetilde{R}_{\mathrm{pu}}(g)\right]-R(g)$
+ 
+ \begin{equation*}
+ 	 \widetilde{R}_{\mathrm{pu}}(g)=\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{+}(g)+\max \left\{0, \widehat{R}_{\mathrm{u}}^{-}(g)-\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{-}(g)\right\}
+ \end{equation*}
+ 
+ Let $\mathfrak{D}^{-}(g)=\left\{\left(\mathcal{X}_{\mathrm{p}}, \mathcal{X}_{\mathrm{u}}\right) | \widehat{R}_{\mathrm{u}}^{-}(g)-\pi_{\mathrm{p}} \hat{R}_{\mathrm{p}}^{-}(g)<0\right\}$, 
+ 
+ $\mathfrak{D}^{+}(g)=\left\{\left(\mathcal{X}_{\mathrm{p}}, \mathcal{X}_{\mathrm{u}}\right) | \widehat{R}_{\mathrm{u}}^{-}(g)-\pi_{\mathrm{p}} \hat{R}_{\mathrm{p}}^{-}(g)\ge 0\right\}$
+ 
+ We have
+ \begin{equation*}
+ 	\begin{aligned}
+ 		 \widetilde{R}_{\mathrm{pu}}(g)=
+ 		\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{+}(g)+\max \left\{0, \widehat{R}_{\mathrm{u}}^{-}(g)-\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{-}(g)\right\}
+ 		&=
+ 		\begin{cases} 
+ 		\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{+}(g) +0 & \mathfrak{D}^{-}(g) \\
+ 		\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{+}(g)+\widehat{R}_{\mathrm{u}}^{-}(g)-\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{-}(g)  & \mathfrak{D}^{+}(g) 
+ 		\end{cases}\\
+ 		 &= \begin{cases} 
+ 		\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{+}(g) & \mathfrak{D}^{-}(g) \\
+ 		\widehat{R}_{\mathrm{pu}}(g)& \mathfrak{D}^{+}(g) 
+ 		\end{cases}
+ 	\end{aligned}
+ \end{equation*}
+ 
+ Let
+ \[
+ p_{\mathrm{p}}\left(\mathcal{X}_{\mathrm{p}}\right)=p_{\mathrm{p}}\left(x_{1}^{\mathrm{p}}\right) \cdots p_{\mathrm{p}}\left(x_{n_{\mathrm{p}}}^{\mathrm{p}}\right), \quad p\left(\mathcal{X}_{\mathrm{u}}\right)=p\left(x_{1}^{\mathrm{u}}\right) \cdots p\left(x_{n_{\mathrm{u}}}^{\mathrm{u}}\right)
+ \]
+ be the probability density functions of $\mathcal{X}_{\mathrm{p}}$ and $\mathcal{X}_{\mathrm{u}} .$ Then let $F_{\mathrm{p}}\left(\mathcal{X}_{\mathrm{p}}\right)$ be the cumulative distribution function of $\mathcal{X}_{\mathrm{p}}, F_{\mathrm{u}}\left(\mathcal{X}_{\mathrm{u}}\right)$ be that of $\mathcal{X}_{\mathrm{u}},$ and
+ $F\left(\mathcal{X}_{\mathrm{p}}, \mathcal{X}_{\mathrm{u}}\right)$
+ be the joint cumulative distribution function of $\left(\mathcal{X}_{\mathrm{p}}, \mathcal{X}_{\mathrm{u}}\right)$
+ 
+ Then we have \footnote{Q: $\mathcal{X}_{\mathrm{p}}$ and $\mathcal{X}_{\mathrm{u}}$ is not necessarily independent  }
+ $$F\left(\mathcal{X}_{\mathrm{p}}, \mathcal{X}_{\mathrm{u}}\right)=F_{\mathrm{p}}\left(\mathcal{X}_{\mathrm{p}}\right) \cdot F_{\mathrm{u}}\left(\mathcal{X}_{\mathrm{u}}\right)$$
+ 
+ Given the above definitions, the measure of $\mathfrak{D}^{-}(g)$ is defined by $$
+ \operatorname{Pr}\left(\mathfrak{D}^{-}(g)\right)=\int_{\left(\mathcal{X}_{\mathrm{p}}, \mathcal{X}_{\mathrm{u}}\right) \in \mathfrak{D}^{-}(g)} \mathrm{d} F\left(\mathcal{X}_{\mathrm{p}}, \mathcal{X}_{\mathrm{u}}\right)
+ $$
+ 
+ where Pr denotes the probability. 
+ 
+ Since $\widetilde{R}_{\mathrm{pu}}(g)$ is identical to $\widehat{R}_{\mathrm{pu}}(g)$ on $\mathfrak{D}^{+}(g)$ and different from $\widehat{R}_{\mathrm{pu}}(g)$ on $\mathfrak{D}^{-}(g),$ we have $\operatorname{Pr}\left(\mathfrak{D}^{-}(g)\right)=\operatorname{Pr}\left\{\widetilde{R}_{\mathrm{pu}}(g) \neq \widehat{R}_{\mathrm{pu}}(g)\right\} .$ That is, the measure of $\mathfrak{D}^{-}(g)$
+ is non-zero if and only if $\widetilde{R}_{\mathrm{pu}}(g)$ differs from $\widehat{R}_{\mathrm{pu}}(g)$ with a non-zero probability.
+ Based on the facts that $\widehat{R}_{\mathrm{pu}}(g)$ is unbiased and $\widetilde{R}_{\mathrm{pu}}(g)-\widehat{R}_{\mathrm{pu}}(g)=0$ on $\mathfrak{D}^{+}(g),$ we have
+ \[
+ \begin{aligned}
+ \mathbb{E}\left[\widetilde{R}_{\mathrm{pu}}(g)\right]-R(g)=& \mathbb{E}\left[\widetilde{R}_{\mathrm{pu}}(g)-\widehat{R}_{\mathrm{pu}}(g)\right] \\
+ =& \int_{\left(\mathcal{X}_{\mathrm{p}}, \mathcal{X}_{\mathrm{u}}\right) \in \mathfrak{D}^{+}(g)} \widetilde{R}_{\mathrm{pu}}(g)-\widehat{R}_{\mathrm{pu}}(g) \mathrm{d} F\left(\mathcal{X}_{\mathrm{p}}, \mathcal{X}_{\mathrm{u}}\right) \\
+ &+\int_{\left(\mathcal{X}_{\mathrm{p}}, \mathcal{X}_{\mathrm{u}}\right) \in \mathfrak{D}^{-}(g)} \widetilde{R}_{\mathrm{pu}}(g)-\widehat{R}_{\mathrm{pu}}(g) \mathrm{d} F\left(\mathcal{X}_{\mathrm{p}}, \mathcal{X}_{\mathrm{u}}\right) \\
+ =& \int_{\left(\mathcal{X}_{\mathrm{p}}, \mathcal{X}_{\mathrm{u}}\right) \in \mathfrak{D}^{-}(g)} \widetilde{R}_{\mathrm{pu}}(g)-\widehat{R}_{\mathrm{pu}}(g) \mathrm{d} F\left(\mathcal{X}_{\mathrm{p}}, \mathcal{X}_{\mathrm{u}}\right)\\
+  \leq &\sup _{\left(\mathcal{X}_{\mathrm{p}}, \mathcal{X}_{\mathrm{u}}\right) \in \mathfrak{D}^{-}(g)}\left(\widetilde{R}_{\mathrm{pu}}(g)-\widehat{R}_{\mathrm{pu}}(g)\right) \cdot \int_{\left(\mathcal{X}_{\mathrm{p}}, \mathcal{X}_{\mathrm{u}}\right) \in \mathfrak{D}^{-}(g)} \mathrm{d} F\left(\mathcal{X}_{\mathrm{p}}, \mathcal{X}_{\mathrm{u}}\right) \\
+= &\sup _{\left(\mathcal{X}_{\mathrm{p}}, \mathcal{X}_{\mathrm{u}}\right) \in \mathfrak{D}^{-}(g)}\left(\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{-}(g)-\widehat{R}_{\mathrm{u}}^{-}(g)\right) \cdot \operatorname{Pr}\left(\mathfrak{D}^{-}(g)\right) 
+ \end{aligned}
+ \]
+ That is, 
+ $$
+ \begin{aligned}
+ \mathbb{E}\left[\widetilde{R}_{\mathrm{pu}}(g)\right]-R(g) & \leq \sup _{\left(\mathcal{X}_{\mathrm{p}}, \mathcal{X}_{\mathrm{u}}\right) \in \mathfrak{D}^{-}(g)}\left(\widetilde{R}_{\mathrm{pu}}(g)-\widehat{R}_{\mathrm{pu}}(g)\right) \cdot \int_{\left(\mathcal{X}_{\mathrm{p}}, \mathcal{X}_{\mathrm{u}}\right) \in \mathfrak{D}^{-}(g)} \mathrm{d} F\left(\mathcal{X}_{\mathrm{p}}, \mathcal{X}_{\mathrm{u}}\right) \\
+ &=\sup _{\left(\mathcal{X}_{\mathrm{p}}, \mathcal{X}_{\mathrm{u}}\right) \in \mathfrak{D}^{-}(g)}\left(\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{-}(g)-\widehat{R}_{\mathrm{u}}^{-}(g)\right) \cdot \operatorname{Pr}\left(\mathfrak{D}^{-}(g)\right) \\
+% & \leq C_{\ell} \pi_{\mathrm{p}} \Delta_{g}
+ \end{aligned}
+ $$
+ 
+ Taking into account that 
+ $$
+ \begin{aligned}
+ \operatorname{Pr}\left(\mathfrak{D}^{-}(g)\right) &=\operatorname{Pr}\left\{\widehat{R}_{\mathrm{u}}^{-}(g)-\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{-}(g)<0\right\} \\
+ \end{aligned}
+ $$
+ 
+  We made an assumption:
+  \begin{description}
+  	\item[Assumption] There is $\alpha>0$ , such that $R_{\mathrm{n}}^{-}(g)\ge \alpha $
+  \end{description}
+
+ Then we have 
+ $$
+ \begin{aligned}
+ \operatorname{Pr}\left(\mathfrak{D}^{-}(g)\right) &=\operatorname{Pr}\left\{\widehat{R}_{\mathrm{u}}^{-}(g)-\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{-}(g)<0\right\} \\
+ & \leq \operatorname{Pr}\left\{\widehat{R}_{\mathrm{u}}^{-}(g)-\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{-}(g) \leq R_{\mathrm{n}}^{-}(g)-\alpha\right\} \\
+ &=\operatorname{Pr}\left\{R_{\mathrm{n}}^{-}(g)-\left(\widehat{R}_{\mathrm{u}}^{-}(g)-\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{-}(g)\right) \geq \alpha\right\}
+ \end{aligned}
+ $$
+ Since 
+ $\mathbb{E}\left[\widehat{R}_{\mathrm{u}}^{-}(g)-\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{-}(g)\right]= R_{\mathrm{n}}^{-}(g)$
+ 
+ We want to use McDiarmid's inequality to upper bound this probability,
+ 
+ We made another assumption:
+ 
+ \begin{description}
+ 	\item[Assumption] $0\le \ell(t,\pm1)\le C_{\ell}$ 
+ \end{description}
+
+We have assumed that $0 \leq \ell(t,\pm 1) \leq C_{\ell},$ and thus the change of $\widehat{R}_{\mathrm{p}}^{-}(g)$ will be no more than $C_{\ell} / n_{\mathrm{p}}$ if some $x_{i}^{\mathrm{p}} \in \mathcal{X}_{\mathrm{p}}$ is replaced, or the change of $\widehat{R}_{\mathrm{u}}^{-}(g)$ will be no more than $C_{\ell} / n_{\mathrm{u}}$ if some
+$x_{i}^{\mathrm{u}} \in \mathcal{X}_{\mathrm{u}}$ is replaced. Subsequently, $M c$ Diarmid's inequality implies
+\begin{equation}
+\begin{aligned}
+\label{eq:pr-diff-bound}
+\operatorname{Pr}\left\{R_{\mathrm{n}}^{-}(g)-\left(\widehat{R}_{\mathrm{u}}^{-}(g)-\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{-}(g)\right) \geq \alpha\right\} & \leq \exp \left(-\frac{2 \alpha^{2}}{n_{\mathrm{p}}\left(C_{\ell} \pi_{\mathrm{p}} / n_{\mathrm{p}}\right)^{2}+n_{\mathrm{u}}\left(C_{\ell} / n_{\mathrm{u}}\right)^{2}}\right) \\
+&=\exp \left(-\frac{2 \alpha^{2} / C_{\ell}^{2}}{\pi_{\mathrm{p}}^{2} / n_{\mathrm{p}}+1 / n_{\mathrm{u}}}\right)
+\end{aligned}
+\end{equation}
+
+Denote the RHS of this equation by $\Delta_{g}$
+
+We have
+ $$
+\begin{aligned}
+\mathbb{E}\left[\widetilde{R}_{\mathrm{pu}}(g)\right]-R(g) &\le \sup _{\left(\mathcal{X}_{\mathrm{p}}, \mathcal{X}_{\mathrm{u}}\right) \in \mathfrak{D}^{-}(g)}\left(\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{-}(g)-\widehat{R}_{\mathrm{u}}^{-}(g)\right) \cdot \Delta(g) \\
+% & \leq C_{\ell} \pi_{\mathrm{p}} \Delta_{g}
+\end{aligned}
+$$
+
+$$\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{-}(g)-
+\widehat{R}_{\mathrm{u}}^{-}(g)\\
+=
+\pi_\mathrm{p}\left(1 / n_{\mathrm{p}}\right) \sum_{i=1}^{n_{\mathrm{p}}} \ell\left(g\left(x_{i}^{\mathrm{p}}\right),-1\right)
+-\left(1 / n_{\mathrm{u}}\right) \sum_{i=1}^{n_{\mathrm{u}}} \ell\left(g\left(x_{i}^{\mathrm{u}}\right),-1\right)$$
+
+Thus, 
+
+ $$
+\begin{aligned}
+\mathbb{E}\left[\widetilde{R}_{\mathrm{pu}}(g)\right]-R(g) &\le \sup _{\left(\mathcal{X}_{\mathrm{p}}, \mathcal{X}_{\mathrm{u}}\right) \in \mathfrak{D}^{-}(g)}\left(\pi_{\mathrm{p}} \widehat{R}_{\mathrm{p}}^{-}(g)-\widehat{R}_{\mathrm{u}}^{-}(g)\right) \cdot \Delta(g) \\
+ & \leq C_{\ell} \pi_{\mathrm{p}} \Delta_{g}
+\end{aligned}
+$$
+We also have
+ \[
+\begin{aligned}
+\mathbb{E}\left[\widetilde{R}_{\mathrm{pu}}(g)\right]-R(g)=& \mathbb{E}\left[\widetilde{R}_{\mathrm{pu}}(g)-\widehat{R}_{\mathrm{pu}}(g)\right] \ge 0
+\end{aligned}
+\]
+
+Therefore, As $n_\mathrm{p}$,$n_\mathrm{u}\rightarrow \infty$, the bias of $\widetilde{R}_{\mathrm{pu}}(g)$ decays exponentially:
+
+\begin{equation}
+\label{thm:bias-consistency}
+	0 \le \mathbb{E}\left[\widetilde{R}_{\mathrm{pu}}(g)\right]-R(g)= \mathbb{E}\left[\widetilde{R}_{\mathrm{pu}}(g)-\widehat{R}_{\mathrm{pu}}(g)\right] \le C_{\ell}\pi_\mathrm{p}\Delta_{g}
+\end{equation}
+
+\subsection{consistency}
+
+\begin{equation}
+\begin{aligned}
+\left|\widetilde{R}_{\mathrm{pu}}(g)-R(g)\right| 
+& = \left|\widetilde{R}_{\mathrm{pu}}(g)-\mathbb{E}[\widetilde{R}_{\mathrm{pu}}(g)]+\mathbb{E}[\widetilde{R}_{\mathrm{pu}}(g)]-R(g)\right| \\
+& \le |\widetilde{R}_{\mathrm{pu}}(g)-\mathbb{E}[\widetilde{R}_{\mathrm{pu}}(g)]| +|\mathbb{E}[\widetilde{R}_{\mathrm{pu}}(g)]-R(g)| \\
+& \le |\widetilde{R}_{\mathrm{pu}}(g)-\mathbb{E}[\widetilde{R}_{\mathrm{pu}}(g)]| +C_{\ell}\pi_\mathrm{p}\Delta_{g}
+\end{aligned}
+\end{equation}
+
+We can Apply Mcdiarmid's inequality to $\widetilde{R}_{\mathrm{pu}}(g)$, 
+
+The change of $\widetilde{R}_{\mathrm{pu}}(g)$ will be no more than $2 C_{\ell} / n_{\mathrm{p}}$ if some $x_{i}^{\mathrm{p}} \in \mathcal{X}_{\mathrm{p}}$ is replaced, or it will be no more than $C_{\ell} / n_{\mathrm{u}}$ if some $x_{i}^{\mathrm{u}} \in \mathcal{X}_{\mathrm{u}}$ is replaced, and McDiarmid's inequality gives us
+\[
+\operatorname{Pr}\left\{\left|\widetilde{R}_{\mathrm{pu}}(g)-\mathbb{E}\left[\widetilde{R}_{\mathrm{pu}}(g)\right]\right| \geq \epsilon\right\} \leq 2 \exp \left(-\frac{2 \epsilon^{2}}{n_{\mathrm{p}}\left(2 C_{\ell} \pi_{\mathrm{p}} / n_{\mathrm{p}}\right)^{2}+n_{\mathrm{u}}\left(C_{\ell} / n_{\mathrm{u}}\right)^{2}}\right)
+\]
+
+Let $\delta$ the RHS of the equation. We obtain the equivalent statement:
+or equivalently, with probability at least $1-\delta$
+\[
+\begin{aligned}
+\left|\widetilde{R}_{\mathrm{pu}}(g)-\mathbb{E}\left[\widetilde{R}_{\mathrm{pu}}(g)\right]\right| & \leq \sqrt{\frac{\ln (2 / \delta) C_{\ell}^{2}}{2}\left(\frac{4 \pi_{\mathrm{p}}^{2}}{n_{\mathrm{p}}}+\frac{1}{n_{\mathrm{u}}}\right)} \\
+& = C_{\delta}\sqrt{\frac{4 \pi_{\mathrm{p}}^{2}}{n_{\mathrm{p}}}+\frac{1}{n_{\mathrm{u}}})}\\
+& \leq C_{\delta}\left(\frac{2 \pi_{\mathrm{p}}}{\sqrt{n_{\mathrm{p}}}}+\frac{1}{\sqrt{n_{\mathrm{u}}}}\right) \\
+&=C_{\delta} \cdot \chi_{n_{\mathrm{p}}, n_{\mathrm{u}}}
+\end{aligned}
+\]
+
+where $C_{\delta}=C_{\ell} \sqrt{\ln (2 / \delta) / 2}$, $\chi_{n_{\mathrm{p}}, n_{\mathrm{u}}}=2 \pi_{\mathrm{p}} / \sqrt{n_{\mathrm{p}}}+1 / \sqrt{n_{\mathrm{u}}}$
+
+This inequality indicates for fixed
+$g, \widetilde{R}_{\mathrm{pu}}(g) \rightarrow R(g)$ in $\mathcal{O}_{p}\left(\pi_{\mathrm{p}} / \sqrt{n_{\mathrm{p}}}+1 / \sqrt{n_{\mathrm{u}}}\right)$
+This convergence rate is optimal according to the central limit theorem, which means the proposed estimator is a biased yet optimal estimator to the risk.
+
+\subsection{Mean Squared error}
+After introducing the bias, $\widetilde{R}_{\mathrm{pu}}(g)$ tends to overestimate $R(g) .$(Since the bias is non-negative). It is not a shrinkage estimator, so that its mean squared error (MSE) is not necessarily smaller than that of $\widehat{R}_{\mathrm{pu}}(g)$. However, we can still characterize this reduction in MSE.
+
+For convenience, let $A=\pip\hRp^+(g)$ and $B=\hRu^-(g)-\pip\hRp^-(g)$, so that
+\begin{align*}
+R(g)=\bE[A+B],\quad
+\hRpu(g)=A+B,\quad
+\tRpu(g)=A+B_+,
+\end{align*}
+where $B_+=\max\{0,B\}$. Subsequently, let $R=R(g)$ for short, and then by definition,
+\begin{align*}
+\mse(\hRpu(g))
+&= \bE[(A+B-R)^2]\\
+&= \bE[(A+B)^2]-2R\cdot\bE[A+B]+R^2,\\
+\mse(\tRpu(g))
+&= \bE[(A+B_+-R)^2]\\
+&= \bE[(A+B_+)^2]-2R\cdot\bE[A+B_+]+R^2.
+\end{align*}
+Hence,
+\begin{align*}
+\mse(\hRpu(g))-\mse(\tRpu(g))
+&= \bE[(A+B)^2]-\bE[(A+B_+)^2]\\
+&\quad -2R\cdot(\bE[A+B]-\bE[A+B_+]).
+\end{align*}
+The first part $\bE[(A+B)^2]-\bE[(A+B_+)^2]$ can be rewritten as
+\begin{align*}
+\bE[(A+B)^2]-\bE[(A+B_+)^2]
+&= \bE[2A(B-B_+)+B^2-B_+^2]\\
+&= \int_{(\Xp,\Xu)\in\fD^+(g)}2A(B-B)+B^2-B^2\,\dif F(\Xp,\Xu)\\
+&\quad +\int_{(\Xp,\Xu)\in\fD^-(g)}2A(B-0)+B^2-0^2\,\dif F(\Xp,\Xu)\\
+&= \int_{(\Xp,\Xu)\in\fD^-(g)}2AB+B^2\,\dif F(\Xp,\Xu).
+\end{align*}
+The second part $2R\cdot(\bE[A+B]-\bE[A+B_+])$ can be rewritten as
+\begin{align*}
+2R\cdot(\bE[A+B]-\bE[A+B_+])
+&= 2R\cdot\bE[B-B_+]\\
+&= 2R\cdot\int_{(\Xp,\Xu)\in\fD^+(g)}B-B\,\dif F(\Xp,\Xu)\\
+&\quad +2R\cdot\int_{(\Xp,\Xu)\in\fD^-(g)}B-0\,\dif F(\Xp,\Xu)\\
+&= \int_{(\Xp,\Xu)\in\fD^-(g)}2RB\,\dif F(\Xp,\Xu).
+\end{align*}
+As a consequence,
+\begin{align*}
+\mse(\hRpu(g))-\mse(\tRpu(g))
+&= \int_{(\Xp,\Xu)\in\fD^-(g)}(2A+B-2R)B\,\dif F(\Xp,\Xu),
+\end{align*}
+
+That is,
+\begin{thm}[MSE reduction]
+	\label{thm:mse}%
+	It holds that $\mse(\tRpu(g))<\mse(\hRpu(g))$,%
+	\footnote{Here, $\mse(\cdot)$ is over repeated sampling of $(\Xp,\Xu)$.}
+	if and only if
+	\begin{align}
+	\label{eq:mse-cond}%
+	\int_{(\Xp,\Xu)\in\fD^-(g)}(\hRpu(g)+\tRpu(g)-2R(g))
+	(\hRu^-(g)-\pip\hRp^-(g))\,\dif F(\Xp,\Xu) > 0,
+	\end{align}
+	where $\dif F(\Xp,\Xu)=\prod_{i=1}^\Np\prp(\xp_i)\dif\xp_i\cdot\prod_{i=1}^\Nu p(\xu_i)\dif\xu_i$.
+\end{thm}
+
+Now we analyze the sufficient condition of Eq.~\eqref{eq:mse-cond} being valid.
+
+We want to get a lower bound of the LHS of Eq.~\eqref{eq:mse-cond}. Then it suffices to let the lower bound be positive.
+\begin{align}
+\label{eq:cond-sym-loss}%
+\ell(t,+1)+\ell(t,-1)=1,
+\end{align}
+
+Since $B\le 0$ on $\fD^-(g)$, we need to get an upper bound of $2A+B-2R$.
+
+\begin{align*}
+A-R
+&= A-\bE[A]-\bE[B]\\
+&= \pip\hRp^+(g)-\pip\Rp^+(g)-\bE[B]\\
+&= \pip\Rp^-(g)-\pip\hRp^-(g)-\bE[B].
+\end{align*}
+
+where the third equation is by the assumption that $\ell$ satisfies \eqref{eq:cond-sym-loss}.
+
+Thus, with probability one,
+\begin{align*}
+A-R
+&= \pip\Rp^-(g)-\pip\hRp^-(g)-\bE[B]+(\hRu^-(g)-\hRu^-(g))+(\Ru^-(g)-\Ru^-(g))\\
+&= (\hRu^-(g)-\pip\hRp^-(g))-(\Ru^-(g)-\pip\Rp^-(g))-\bE[B]+(\Ru^-(g)-\hRu^-(g))\\
+&= B-2\bE[B]+(\Ru^-(g)-\hRu^-(g))\\
+&\le B,
+\end{align*}
+where we used the assumptions that $\bE[B]\ge\alpha$ and $\Ru^-(g)-\hRu^-(g)\le2\alpha$ almost surely on $\fD^-(g)$. 
+
+To sum up, we have established that
+\begin{align*}
+\int_{(\Xp,\Xu)\in\fD^-(g)}(2A+B-2R)B\,\dif F(\Xp,\Xu)
+&\ge 3\int_{(\Xp,\Xu)\in\fD^-(g)}B^2\,\dif F(\Xp,\Xu).
+\end{align*}
+Due to the fact that $B^2>0$ on $\fD^-(g)$ and the assumption that $\pr(\fD^-(g))>0$, we know Eq.~\eqref{eq:mse-cond} is valid. 
+
+Finally, for any $0\le\beta\le C_\ell\pip$, it is clear that
+\begin{align*}
+\{(\Xp,\Xu)\mid B<-\beta\}
+\subseteq\{(\Xp,\Xu)\mid B<0\}
+=\fD^-(g),
+\end{align*}
+and $B<-\beta$ if and only if $\tRpu(g)-\hRpu(g)>\beta$. These two facts imply that
+\begin{align*}
+\int_{(\Xp,\Xu)\in\fD^-(g)}B^2\,\dif F(\Xp,\Xu)
+&\ge \int_{(\Xp,\Xu) \mid B<-\beta}B^2\,\dif F(\Xp,\Xu)\\
+&\ge \beta^2\int_{(\Xp,\Xu) \mid B<-\beta}\dif F(\Xp,\Xu)\\
+&= \beta^2\pr\{B<-\beta\}\\
+&= \beta^2\pr\{\tRpu(g)-\hRpu(g)>\beta\},
+\end{align*}
+
+Then we have 
+we have for any $0\le\beta\le C_\ell\pip$,
+\begin{align}
+\label{eq:mse-bound}%
+\mse(\hRpu(g))-\mse(\tRpu(g))
+\ge 3\beta^2\pr\{\tRpu(g)-\hRpu(g)>\beta\}.
+\end{align}
+
+
+To sum up, we use the following 4 assumptions:
+\begin{enumerate}
+	\item   $\pr(\fD^-(g))>0$;
+	\item  $\ell$ satisfies Eq.~\eqref{eq:cond-sym-loss};
+	\item  $\Rn^-(g)\ge\alpha>0$;
+	\item  $\Nu\gg\Np$, such that we have $\Ru^-(g)-\hRu^-(g)\le2\alpha$ almost surely on $\fD^-(g)$.
+\end{enumerate}
+
+The 4th assumption is explained as follows.
+Since \emph{U data can be much cheaper than P data} in practice, it would be natural to assume $\Nu$ is much larger and grows much faster than $\Np$, hence $\pr\{\Ru^-(g)-\hRu^-(g)\ge\alpha\}/\pr\{\hRp^-(g)-\Rp^-(g)\ge\alpha/\pip\}
+\propto \exp(\Np-\Nu)$ asymptotically.%
+\footnote{This can be derived as $\Np,\Nu\to\infty$ by applying the \emph{central limit theorem} to the two differences and then \emph{L'H\^{o}pital's rule} to the ratio of \emph{complementary error functions} .}
+This means the contribution of $\Xu$ is negligible for making $(\Xp,\Xu)\in\fD^-(g)$ so that $\pr(\fD^-(g))$ exhibits exponential decay mainly in $\Np$. As $\pr\{\Ru^-(g)-\hRu^-(g)\ge2\alpha\}$ has stronger exponential decay in $\Nu$ than $\pr\{\Ru^-(g)-\hRu^-(g)\ge\alpha\}$ as well as $\Nu\gg\Np$, we made the 4th assumption.
+
+\section{The estimation error bound of $\tgpu$}
+
+We are likewise interested in its use for training classifiers. In what follows, we analyze the estimation error $R(\tgpu)-R(g^*)$, where $g^*$ is the true risk minimizer in $\cG$, i.e., $g^*=\argmin_{g\in\cG}R(g)$. 
+
+As a common practice, we assume that $\ell(t,y)$ is Lipschitz continuous in $t$ for all $|t|\le C_g$ with a Lipschitz constant $L_\ell$.
+
+\begin{thm}[Estimation error bound]
+	\label{thm:est-err}%
+	Assume that
+	\begin{enumerate}
+		\item (a) $\inf_{g\in\cG}\Rn^-(g)\ge\alpha>0$ 
+		
+		\item 	(b) $\cG$ is closed under negation, i.e., $g\in\cG$ if and only if $-g\in\cG$.
+	\end{enumerate}
+
+ denote by $\Delta$ the right-hand side of Eq.~\eqref{eq:pr-diff-bound};
+ 
+	Then, for any $\delta>0$, with probability at least $1-\delta$,
+	\begin{align}
+	\label{eq:est-err-bound}%
+	R(\tgpu)-R(g^*)
+	\le 16L_\ell\pip\fR_{\Np,\prp}(\cG)
+	+8L_\ell\fR_{\Nu,p}(\cG)
+	+2C'_\delta\cdot\chi_{\Np,\Nu} +2C_\ell\pip\Delta,
+	\end{align}
+	where $C'_\delta=C_\ell\sqrt{\ln(1/\delta)/2}$, and $\fR_{\Np,\prp}(\cG)$ and $\fR_{\Nu,p}(\cG)$ are the Rademacher complexities of $\cG$ for the sampling of size $\Np$ from $\prp(x)$ and of size $\Nu$ from $p(x)$, respectively.
+\end{thm}
+
+\begin{proof}
+\begin{align*}
+R(\tgpu)-R(g^*)
+&= \left(R(\tgpu)-\tRpu(\tgpu)\right)
++\left(\tRpu(\tgpu)-\tRpu(g^*)\right)
++\left(\tRpu(g^*)-R(g^*)\right)\\
+&= \left(\tRpu(\tgpu)-\tRpu(g^*)\right)
++\left(R(\tgpu)-\tRpu(\tgpu)\right)
++\left(\tRpu(g^*)-R(g^*)\right)\\
+&\le 0 +2\sup\nolimits_{g\in\cG}|\tRpu(g)-R(g)|\\
+\end{align*}
+where $\tRpu(\tgpu)\le\tRpu(g^*)$ by the definition of $\tgpu$. \qed
+\end{proof}
+
+Next, we will focus on $\sup\nolimits_{g\in\cG}|\tRpu(g)-R(g)|$
+
+
+
+
+\begin{lem}
+	\label{thm:uni-dev}%
+	Under the assumptions of Theorem~\ref{thm:est-err}, for any $\delta>0$, with probability at least $1-\delta$,
+	\begin{align}
+	\label{eq:uni-dev-bound}%
+	\sup\nolimits_{g\in\cG}|\tRpu(g)-R(g)|
+	\le 8L_\ell\pip\fR_{\Np,\prp}(\cG)
+	+4L_\ell\fR_{\Nu,p}(\cG)
+	+C'_\delta\cdot\chi_{\Np,\Nu} +C_\ell\pip\Delta.
+	\end{align}
+\end{lem}
+
+In the next, we will prove Lemma \ref{thm:uni-dev}
+\paragraph{Preliminary}%
+An alternative definition of the Rademacher complexity will be used in the proof:
+\begin{align*}
+\fR'_{n,q}(\cG) = \bE_\cX\bE_{\sigma_1,\ldots,\sigma_n}\left[ \sup\nolimits_{g\in\cG}
+\left|\frac{1}{n}\sum\nolimits_{x_i\in\cX}\sigma_ig(x_i)\right| \right].
+\end{align*}
+For the sake of comparison, the one we have used in the statements of theoretical results is
+\begin{align*}
+\fR_{n,q}(\cG) = \bE_\cX\bE_{\sigma_1,\ldots,\sigma_n}\left[ \sup\nolimits_{g\in\cG}
+\frac{1}{n}\sum\nolimits_{x_i\in\cX}\sigma_ig(x_i) \right].
+\end{align*}
+This alternative version comes from \cite{koltchinskii2001rademacher} of which authors are the pioneers of error bounds based on the Rademacher complexity. Without any composition, $\fR'_{n,q}(\cG)\ge\fR_{n,q}(\cG)$ for arbitrary $\cG$ and $\fR'_{n,q}(\cG)=\fR_{n,q}(\cG)$ if $\cG$ is closed under negation. However, with a composition \begin{align*}
+\ell\circ\cG=\{\ell\circ g\mid g\in\cG\}
+\end{align*}
+where the loss $\ell$ is non-negative, the Rademacher complexity of the \emph{composite function class} would generally not satisfy $\fR'_{n,q}(\ell\circ\cG)=\fR_{n,q}(\ell\circ\cG)$ since $\ell\circ\cG$ is generally not closed under negation. Furthermore, a vital disagreement arises when considering the contraction principle or property: if $\psi:\bR\to\bR$ is a Lipschitz continuous function with a Lipschitz constant $L_\psi$ and satisfies $\psi(0)=0$, we have
+\begin{align*}
+\fR_{n,q}(\psi\circ\cG) &\le L_\psi\fR_{n,q}(\cG),\\
+\fR'_{n,q}(\psi\circ\cG) &\le 2L_\psi\fR'_{n,q}(\cG),
+\end{align*}
+according to \emph{Talagrand's contraction lemma} \cite{ledoux2013probability} and its extension \cite{mohri2012foundations,shalev2014understanding}. Here, for $\fR_{n,q}(\psi\circ\cG)$ we can use Lemma~4.2 in \cite{mohri2012foundations} or Lemma~26.9 \\in \cite{shalev2014understanding} where $\psi(0)=0$ is safely dropped, while for $\fR'_{n,q}(\psi\circ\cG)$ we have to use the original Theorem~4.12 in \cite{ledoux2013probability} where $\psi(0)=0$ is required. In fact, the name of the lemma is after that $\psi$ is a contraction if $\psi(0)=0$ and $L_\psi=1$.
+
+%-------------------------------------------------------------------------
+\paragraph{Proof}%
+Firstly, we deal with the bias of $\tRpu(g)$:
+\begin{align}
+\sup\nolimits_{g\in\cG}|\tRpu(g)-R(g)|
+&= \sup\nolimits_{g\in\cG}|\tRpu(g)-\bE[\tRpu(g)]
++\bE[\tRpu(g)]-R(g)| \\
+&\le \sup\nolimits_{g\in\cG}|\tRpu(g)-\bE[\tRpu(g)]|
++\sup\nolimits_{g\in\cG}|\bE[\tRpu(g)]-R(g)| \notag\\
+\label{eq:uni-dev-bias}%
+&\le \sup\nolimits_{g\in\cG}|\tRpu(g)-\bE[\tRpu(g)]|
++C_\ell\pip\Delta,
+\end{align}
+where we followed the assumption that $\inf_{g\in\cG}\Rn^-(g)\ge\alpha>0$ and Theorem~\eqref{thm:bias-consistency}.
+
+Secondly, we apply McDiarmid's inequality to the uniform deviation $\sup\nolimits_{g\in\cG}|\tRpu(g)-\bE[\tRpu(g)]|$ to get that with probability at least $1-\delta$,
+\begin{align}
+\label{eq:uni-dev-martingale}%
+\sup\nolimits_{g\in\cG}|\tRpu(g)-\bE[\tRpu(g)]|
+-\bE[\sup\nolimits_{g\in\cG}|\tRpu(g)-\bE[\tRpu(g)]|]
+\le C'_\delta\cdot\chi_{\Np,\Nu}.
+\end{align}
+Notice that this concentration inequality is single-sided even though the uniform deviation itself is double-sided, which is different from the non-uniform deviation in Theorem~\ref{thm:bias-consistency}.
+
+Thirdly, we make \emph{symmetrization}. Suppose that $(\Xp',\Xu')$ is a \emph{ghost sample}, then
+\begin{align*}
+\bE[\sup\nolimits_{g\in\cG}|\tRpu(g)-\bE[\tRpu(g)]|]
+&= \bE_{(\Xp,\Xu)}[\sup\nolimits_{g\in\cG}|\tRpu(g;\Xp,\Xu)-\bE_{(\Xp',\Xu')}[\tRpu(g;\Xp',\Xu')]|]\\
+&= \bE_{(\Xp,\Xu)}[\sup\nolimits_{g\in\cG}|\bE_{(\Xp',\Xu')}[\tRpu(g;\Xp,\Xu)]-\bE_{(\Xp',\Xu')}[\tRpu(g;\Xp',\Xu')]|]\\
+&= \bE_{(\Xp,\Xu)}[\sup\nolimits_{g\in\cG}|\bE_{(\Xp',\Xu')}[\tRpu(g;\Xp,\Xu)-\tRpu(g;\Xp',\Xu')]|]\\
+&\le \bE_{(\Xp,\Xu)}[\sup\nolimits_{g\in\cG}\bE_{(\Xp',\Xu')}[|\tRpu(g;\Xp,\Xu)-\tRpu(g;\Xp',\Xu')|]]\\
+&\le \bE_{(\Xp,\Xu),(\Xp',\Xu')}[\sup\nolimits_{g\in\cG}|\tRpu(g;\Xp,\Xu)-\tRpu(g;\Xp',\Xu')|],
+\end{align*}
+where we applied \emph{Jensen's inequality} twice since the absolute value and the supremum are convex. 
+
+By decomposing the difference $|\tRpu(g;\Xp,\Xu)-\tRpu(g;\Xp',\Xu')|$, we can know that
+\begin{align*}
+&|\tRpu(g;\Xp,\Xu)-\tRpu(g;\Xp',\Xu')|\\
+&\quad = |\pip\hRp^+(g;\Xp)-\pip\hRp^+(g;\Xp')\\
+&\qquad +\max\{0,\hRu^-(g;\Xu)-\pip\hRp^-(g;\Xp)\}
+-\max\{0,\hRu^-(g;\Xu')-\pip\hRp^-(g;\Xp')\}|\\
+&\quad \le \pip|\hRp^+(g;\Xp)-\hRp^+(g;\Xp')|
++\pip|\hRp^-(g;\Xp)-\hRp^-(g;\Xp')|
++|\hRu^-(g;\Xu)-\hRu^-(g;\Xu')|
+\end{align*}
+where we employed $|\max\{0,z\}-\max\{0,z'\}|\le|z-z'|$. This decomposition results in
+\begin{align}
+\bE[\sup\nolimits_{g\in\cG}|\tRpu(g)-\bE[\tRpu(g)]|]
+&\le \pip\bE_{\Xp,\Xp'}[\sup\nolimits_{g\in\cG}|\hRp^+(g;\Xp)-\hRp^+(g;\Xp')|] \notag\\
+&\quad +\pip\bE_{\Xp,\Xp'}[\sup\nolimits_{g\in\cG}|\hRp^-(g;\Xp)-\hRp^-(g;\Xp')|] \notag\\
+\label{eq:uni-dev-symmetrization}%
+&\quad +\bE_{\Xu,\Xu'}[\sup\nolimits_{g\in\cG}|\hRu^-(g;\Xu)-\hRu^-(g;\Xu')|].
+\end{align}
+
+Fourthly, we relax those expectations in \eqref{eq:uni-dev-symmetrization} to Rademacher complexities. The original $\ell$ may miss the origin, i.e., $\ell(0,y)\neq0$, with which we need to cope. Let
+\begin{align*}
+\tilde{\ell}(t,y)=\ell(t,y)-\ell(0,y)
+\end{align*}
+be a \emph{shifted loss} so that $\tilde{\ell}(0,y)=0$. Note that for all $t,t'\in\bR$ and $y=\pm1$, 
+\begin{align*}
+\ell(t,y)-\ell(t',y)=\tilde{\ell}(t,y)-\tilde{\ell}(t',y).
+\end{align*}
+Hence,
+\begin{align*}
+\hRp^+(g;\Xp)-\hRp^+(g;\Xp')
+&\textstyle = (1/\Np)\sum_{x_i\in\Xp}\ell(g(x_i),+1)
+-(1/\Np)\sum_{x'_i\in\Xp'}\ell(g(x'_i),+1)\\
+&\textstyle = (1/\Np)\sum_{i=1}^\Np(\ell(g(x_i),+1)-\ell(g(x'_i),+1))\\
+&\textstyle = (1/\Np)\sum_{i=1}^\Np
+(\tilde{\ell}(g(x_i),+1)-\tilde{\ell}(g(x'_i),+1)).
+\end{align*}
+This is already a standard form where we can attach Rademacher variables to every $\tilde{\ell}(g(x_i),+1)-\tilde{\ell}(g(x'_i),+1)$, and it is a routine work to show that
+\begin{align*}
+\bE_{\Xp,\Xp'}[\sup\nolimits_{g\in\cG}|\hRp^+(g;\Xp)-\hRp^+(g;\Xp')|]
+\le 2\fR_{\Np,\prp}(\tilde{\ell}(\cdot,+1)\circ\cG).
+\end{align*}
+
+
+The other two expectations can be handled analogously. As a result, \eqref{eq:uni-dev-symmetrization} can be reduced to
+\begin{align}
+\bE[\sup\nolimits_{g\in\cG}|\tRpu(g)-\bE[\tRpu(g)]|]
+&\le 2\pip\fR'_{\Np,\prp}(\tilde{\ell}(\cdot,+1)\circ\cG) \notag\\
+\label{eq:uni-dev-rademacher}%
+&\quad +2\pip\fR'_{\Np,\prp}(\tilde{\ell}(\cdot,-1)\circ\cG)
++2\fR'_{\Nu,p}(\tilde{\ell}(\cdot,-1)\circ\cG).
+\end{align}
+
+Finally, we transform the Rademacher complexities of composite function classes in \eqref{eq:uni-dev-rademacher} to those of the original function class. It is obvious that $\tilde{\ell}$ shares the same Lipschitz constant $L_\ell$ with $\ell$, and consequently
+\begin{align}
+\fR'_{\Np,\prp}(\tilde{\ell}(\cdot,+1)\circ\cG)
+&\le 2L_\ell\fR'_{\Np,\prp}(\cG)
+= 2L_\ell\fR_{\Np,\prp}(\cG) \notag\\
+\label{eq:uni-dev-contraction}%
+\fR'_{\Np,\prp}(\tilde{\ell}(\cdot,-1)\circ\cG)
+&\le 2L_\ell\fR'_{\Np,\prp}(\cG)
+= 2L_\ell\fR_{\Np,\prp}(\cG)\\
+\fR'_{\Nu,p}(\tilde{\ell}(\cdot,-1)\circ\cG)
+&\le 2L_\ell\fR'_{\Nu,p}(\cG)
+= 2L_\ell\fR_{\Nu,p}(\cG), \notag
+\end{align}
+where we used Talagrand's contraction lemma and the assumption that $\cG$ is closed under negation. Combining \eqref{eq:uni-dev-bias}, \eqref{eq:uni-dev-martingale}, \eqref{eq:uni-dev-rademacher} and \eqref{eq:uni-dev-contraction} finishes the proof of the uniform deviation bound \eqref{eq:uni-dev-bound}. \qed
+
+Notice that $\hRpu(g)$ is point-wise while $\tRpu(g)$ is not due to the maximum, which makes Lemma~\ref{thm:uni-dev} much more difficult to prove than Lemma~8 of \cite{niu2016theoretical}. The key trick is that after \emph{symmetrization}, we employ $|\max\{0,z\}-\max\{0,z'\}|\le|z-z'|$, making three differences of partial risks point-wise (see \eqref{eq:uni-dev-symmetrization} in the proof). 
+
+As a consequence, we have to use a different Rademacher complexity \emph{with the absolute value inside the supremum}  whose \emph{contraction} makes the coefficients of \eqref{eq:uni-dev-bound} doubled compared with Lemma~8 of \cite{niu2016theoretical} moreover, we have to assume $\cG$ is closed under negation to change back to the standard Rademacher complexity \emph{without the absolute value} 
+ 
+\section{Assumption}
+\begin{itemize}
+	\item $\pi_\mathrm{p}$ is known
+
+\end{itemize}
+
+
+
+
+
+
+\vspace{1cm}
+\bibliography{yuref.bib}
+\bibliographystyle{apalike}
+\end{document}
